@@ -222,7 +222,6 @@ input[type=text],input[type=password]{width:100%;font-size:16px;background:var(-
 const DEFAULT_START = "4311 Manchester Lane, Chesapeake, VA";
 const BASE_BOXES = 10;
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/positron";
-const SYNC_EVERY = 20000;   // check for crew updates every 20 seconds
 
 /* ============ helpers ============ */
 const $ = id => document.getElementById(id);
@@ -382,9 +381,16 @@ function saveDraft(){
 function loadDraft(){
   try { const d = JSON.parse(localStorage.getItem("cbs-draft") || "null"); return d && d.day === today() ? d : null; } catch(e){ return null; }
 }
+// each phone keeps its own route and check marks; nothing is shared between devices
+function saveMine(){
+  try { localStorage.setItem("cbs-mine", JSON.stringify({day:today(), route, done:[...done]})); } catch(e){}
+}
+function loadMine(){
+  try { const d = JSON.parse(localStorage.getItem("cbs-mine") || "null"); return d && d.day === today() ? d : null; } catch(e){ return null; }
+}
 
 /* ============ planning ============ */
-let route = null, updated = 0, done = new Set();
+let route = null, done = new Set();
 
 const formSnapshot = () => JSON.stringify([$("start").value.trim(), boxes().map(b => b.value.trim()).filter(Boolean), $("home").checked, $("tolls").checked]);
 const routeSnapshot = r => r ? JSON.stringify([r.start.label, r.jobs.map(j => j.label), r.home, r.tolls !== false]) : "";
@@ -412,9 +418,9 @@ async function plan(){
     });
     const res = await api("plan", {method:"POST", body:{start, jobs, home:$("home").checked, tolls:$("tolls").checked}});
     const next = {start, jobs, home:$("home").checked, tolls:$("tolls").checked, order:res.order.map(i => jobs[i].id), missed:(res.missed || []).map(i => jobs[i].id), line:res.line || []};
-    const saved = await api("day?d=" + today(), {method:"PUT", body:next});
-    route = next; updated = saved.updated;
+    route = next;
     done = new Set([...done].filter(id => jobs.some(j => j.id === id)));
+    saveMine();
     showRoute();
     if (matchMedia("(max-width:820px)").matches) $("out-h").scrollIntoView({behavior:"smooth", block:"start"});
   } catch(e){
@@ -481,9 +487,7 @@ function applyDone(){
   markers.forEach(m => m.el.classList.toggle("done", done.has(m.id)));
 }
 async function toggleDone(id, on){
-  on ? done.add(id) : done.delete(id); applyDone();
-  try { await api("mark?d=" + today(), {method:"POST", body:{job:id, done:on}}); }
-  catch(e){ if (!(e instanceof NeedPin)){ on ? done.delete(id) : done.add(id); applyDone(); status("Couldn't save that check mark. Check your signal and try again.", true); } }
+  on ? done.add(id) : done.delete(id); applyDone(); saveMine();
 }
 
 /* ============ real map ============ */
@@ -517,31 +521,21 @@ function drawMap(stops, endsHome){
   applyDone();
 }
 
-/* ============ sharing with the crew ============ */
-async function loadDay(fillForm){
-  const d = await api("day?d=" + today());
-  done = new Set(d.done || []);
-  const changed = d.updated !== updated;
-  route = d.route; updated = d.updated;
-  const editing = document.activeElement && document.activeElement.matches("#app input[type=text]");
-  if (fillForm || (changed && !editing)){
-    const draft = fillForm ? loadDraft() : null;
-    if (route && (!draft || formSnapshot() === routeSnapshot(route) || !draft.jobs.some(j => j.value))){
-      $("start").value = route.start.label; setPlace($("start"), route.start); $("home").checked = !!route.home; $("tolls").checked = route.tolls !== false; setJobs(route.jobs);
-    } else if (draft){
-      $("start").value = draft.start.value || DEFAULT_START; setPlace($("start"), draft.start.p); $("home").checked = draft.home !== false; $("tolls").checked = draft.tolls !== false;
-      setJobs(draft.jobs.map(j => j.p ? {...j.p, label:j.value} : j.value).filter(Boolean));
-    }
+/* ============ this phone's saved route ============ */
+async function loadDay(){
+  const mine = loadMine();
+  route = mine ? mine.route : null; done = new Set(mine ? mine.done : []);
+  const draft = loadDraft();
+  if (route && (!draft || formSnapshot() === routeSnapshot(route) || !draft.jobs.some(j => j.value))){
+    $("start").value = route.start.label; setPlace($("start"), route.start); $("home").checked = !!route.home; $("tolls").checked = route.tolls !== false; setJobs(route.jobs);
+  } else if (draft){
+    $("start").value = draft.start.value || DEFAULT_START; setPlace($("start"), draft.start.p); $("home").checked = draft.home !== false; $("tolls").checked = draft.tolls !== false;
+    setJobs(draft.jobs.map(j => j.p ? {...j.p, label:j.value} : j.value).filter(Boolean));
   }
-  if (changed || fillForm) showRoute(); else applyDone();
+  showRoute();
 }
-let syncTimer = 0;
-function startSync(){
-  stopSync();
-  syncTimer = setInterval(() => { if (document.visibilityState === "visible" && !$("app").hidden) loadDay(false).catch(() => {}); }, SYNC_EVERY);
-}
-function stopSync(){ clearInterval(syncTimer); }
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && !$("app").hidden) loadDay(false).catch(() => {}); });
+function startSync(){}
+function stopSync(){}
 
 /* ============ wiring ============ */
 wireBox($("start"));
@@ -552,18 +546,14 @@ $("add").addEventListener("click", () => { const inp = addRow(); syncRows(); sav
 let clearArmed = 0;
 $("clear").addEventListener("click", async () => {
   const btn = $("clear");
-  if (route && !clearArmed){            // the route is shared with the crew, so ask for a second tap
+  if (route && !clearArmed){            // ask for a second tap so a route isn't wiped by accident
     btn.textContent = "Tap again to clear the route";
     clearArmed = setTimeout(() => { clearArmed = 0; btn.textContent = "Clear all jobs"; }, 3000);
     return;
   }
   clearTimeout(clearArmed); clearArmed = 0; btn.textContent = "Clear all jobs";
   setJobs([]); saveDraft(); status("");
-  if (route){
-    try { await api("day?d=" + today(), {method:"DELETE"}); }
-    catch(e){ if (!(e instanceof NeedPin)) status("Couldn't clear the route. Check your signal and try again.", true); return; }
-  }
-  route = null; updated = 0; done = new Set(); emptyState();
+  route = null; done = new Set(); saveMine(); emptyState();
 });
 document.addEventListener("pointerdown", e => { if (suggFor && !e.target.closest(".addr-box")) closeSugg(); });
 
