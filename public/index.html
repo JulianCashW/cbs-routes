@@ -540,7 +540,8 @@ function stopSync(){}
 /* ============ wiring ============ */
 wireBox($("start"));
 $("out").addEventListener("click", e => { if (e.target.closest('.nav[aria-disabled="true"]')) e.preventDefault(); });
-["home","tolls"].forEach(id => $(id).addEventListener("change", () => { saveDraft(); markStale(); }));
+// flipping a box re-plans right away when a route is already showing
+["home","tolls"].forEach(id => $(id).addEventListener("change", () => { saveDraft(); markStale(); if (route && !$("go").disabled) plan(); }));
 $("go").addEventListener("click", plan);
 $("add").addEventListener("click", () => { const inp = addRow(); syncRows(); saveDraft(); inp.focus(); });
 let clearArmed = 0;
