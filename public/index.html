@@ -548,7 +548,22 @@ $("out").addEventListener("click", e => { if (e.target.closest('.nav[aria-disabl
 $("home").addEventListener("change", () => { saveDraft(); markStale(); });
 $("go").addEventListener("click", plan);
 $("add").addEventListener("click", () => { const inp = addRow(); syncRows(); saveDraft(); inp.focus(); });
-$("clear").addEventListener("click", () => { setJobs([]); saveDraft(); markStale(); status(""); });
+let clearArmed = 0;
+$("clear").addEventListener("click", async () => {
+  const btn = $("clear");
+  if (route && !clearArmed){            // the route is shared with the crew, so ask for a second tap
+    btn.textContent = "Tap again to clear the route";
+    clearArmed = setTimeout(() => { clearArmed = 0; btn.textContent = "Clear all jobs"; }, 3000);
+    return;
+  }
+  clearTimeout(clearArmed); clearArmed = 0; btn.textContent = "Clear all jobs";
+  setJobs([]); saveDraft(); status("");
+  if (route){
+    try { await api("day?d=" + today(), {method:"DELETE"}); }
+    catch(e){ if (!(e instanceof NeedPin)) status("Couldn't clear the route. Check your signal and try again.", true); return; }
+  }
+  route = null; updated = 0; done = new Set(); emptyState();
+});
 document.addEventListener("pointerdown", e => { if (suggFor && !e.target.closest(".addr-box")) closeSugg(); });
 
 /* ============ start up ============ */
