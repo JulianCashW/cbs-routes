@@ -106,9 +106,23 @@ async function plan(request, env) {
     .filter(a => a.type === "job")
     .map(a => a.job_index != null ? a.job_index : +a.job_id);
   const missed = (out.properties && out.properties.issues && out.properties.issues.unassigned_jobs) || [];
-  const line = feature.geometry && feature.geometry.type === "MultiLineString" ? feature.geometry.coordinates.flat()
-             : feature.geometry && feature.geometry.type === "LineString" ? feature.geometry.coordinates : [];
+  // Draw the real driving path: ask for turn-by-turn roads through the stops in the chosen order.
+  const stops = [body.start, ...order.map(i => body.jobs[i]), ...(body.home ? [body.start] : [])];
+  const line = (await roadLine(stops, env)) || linePoints(feature.geometry);
   return json({ order, missed, line });
+}
+
+const linePoints = g => !g ? [] : g.type === "MultiLineString" ? g.coordinates.flat() : g.type === "LineString" ? g.coordinates : [];
+async function roadLine(stops, env) {
+  if (stops.length < 2) return null;
+  try {
+    const waypoints = stops.map(p => `${p.lat},${p.lon}`).join("|");
+    const r = await fetch(`${GEO}/routing?waypoints=${encodeURIComponent(waypoints)}&mode=drive&apiKey=${env.GEOAPIFY_KEY}`);
+    if (!r.ok) return null;
+    const f = ((await r.json()).features || [])[0];
+    const pts = f ? linePoints(f.geometry) : [];
+    return pts.length ? pts : null;
+  } catch (e) { return null; }
 }
 
 async function getDay(url, env) {
