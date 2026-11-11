@@ -93,7 +93,8 @@ async function plan(request, env) {
   const req = {
     mode: "drive",
     agents: [{ start_location: start, ...(body.home ? { end_location: start } : {}) }],
-    jobs: body.jobs.map((j, i) => ({ id: String(i), location: [j.lon, j.lat], duration: 0 }))
+    jobs: body.jobs.map((j, i) => ({ id: String(i), location: [j.lon, j.lat], duration: 0 })),
+    ...(body.tolls ? { avoid: [{ type: "tolls" }] } : {})     // skip toll roads when a free road works
   };
   const r = await fetch(`${GEO}/routeplanner?apiKey=${env.GEOAPIFY_KEY}`, {
     method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(req)
@@ -108,16 +109,16 @@ async function plan(request, env) {
   const missed = (out.properties && out.properties.issues && out.properties.issues.unassigned_jobs) || [];
   // Draw the real driving path: ask for turn-by-turn roads through the stops in the chosen order.
   const stops = [body.start, ...order.map(i => body.jobs[i]), ...(body.home ? [body.start] : [])];
-  const line = (await roadLine(stops, env)) || linePoints(feature.geometry);
+  const line = (await roadLine(stops, !!body.tolls, env)) || linePoints(feature.geometry);
   return json({ order, missed, line });
 }
 
 const linePoints = g => !g ? [] : g.type === "MultiLineString" ? g.coordinates.flat() : g.type === "LineString" ? g.coordinates : [];
-async function roadLine(stops, env) {
+async function roadLine(stops, avoidTolls, env) {
   if (stops.length < 2) return null;
   try {
     const waypoints = stops.map(p => `${p.lat},${p.lon}`).join("|");
-    const r = await fetch(`${GEO}/routing?waypoints=${encodeURIComponent(waypoints)}&mode=drive&apiKey=${env.GEOAPIFY_KEY}`);
+    const r = await fetch(`${GEO}/routing?waypoints=${encodeURIComponent(waypoints)}&mode=drive${avoidTolls ? "&avoid=tolls" : ""}&apiKey=${env.GEOAPIFY_KEY}`);
     if (!r.ok) return null;
     const f = ((await r.json()).features || [])[0];
     const pts = f ? linePoints(f.geometry) : [];
