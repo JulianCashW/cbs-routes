@@ -195,6 +195,7 @@ input[type=text],input[type=password]{width:100%;font-size:16px;background:var(-
 
       <div class="checks">
         <label><input type="checkbox" id="home" checked> End the day back at HQ</label>
+        <label><input type="checkbox" id="tolls" checked> Avoid toll roads</label>
       </div>
 
       <div class="plan-bar">
@@ -376,7 +377,7 @@ function setJobs(list){        // list of {label, lat?, lon?, street?} or string
 // unsent edits stay on this device if the page is closed before planning
 function saveDraft(){
   try { localStorage.setItem("cbs-draft", JSON.stringify({day:today(), start:{value:$("start").value, p:placeOf($("start"))},
-    jobs:boxes().map(b => ({value:b.value, p:placeOf(b)})), home:$("home").checked})); } catch(e){}
+    jobs:boxes().map(b => ({value:b.value, p:placeOf(b)})), home:$("home").checked, tolls:$("tolls").checked})); } catch(e){}
 }
 function loadDraft(){
   try { const d = JSON.parse(localStorage.getItem("cbs-draft") || "null"); return d && d.day === today() ? d : null; } catch(e){ return null; }
@@ -385,8 +386,8 @@ function loadDraft(){
 /* ============ planning ============ */
 let route = null, updated = 0, done = new Set();
 
-const formSnapshot = () => JSON.stringify([$("start").value.trim(), boxes().map(b => b.value.trim()).filter(Boolean), $("home").checked]);
-const routeSnapshot = r => r ? JSON.stringify([r.start.label, r.jobs.map(j => j.label), r.home]) : "";
+const formSnapshot = () => JSON.stringify([$("start").value.trim(), boxes().map(b => b.value.trim()).filter(Boolean), $("home").checked, $("tolls").checked]);
+const routeSnapshot = r => r ? JSON.stringify([r.start.label, r.jobs.map(j => j.label), r.home, r.tolls !== false]) : "";
 function markStale(){ const s = $("stale"); if (s) s.hidden = !route || formSnapshot() === routeSnapshot(route); }
 
 const status = (text, err) => { const s = $("status"); s.textContent = text; s.className = "status" + (err ? " err" : ""); };
@@ -409,8 +410,8 @@ async function plan(){
       const p = places[i+1], base = key(b.value) || "job"; seen[base] = (seen[base] || 0) + 1;
       return {id: seen[base] > 1 ? base + "-" + seen[base] : base, label:b.value.trim(), lat:p.lat, lon:p.lon, street:p.street || ""};
     });
-    const res = await api("plan", {method:"POST", body:{start, jobs, home:$("home").checked}});
-    const next = {start, jobs, home:$("home").checked, order:res.order.map(i => jobs[i].id), missed:(res.missed || []).map(i => jobs[i].id), line:res.line || []};
+    const res = await api("plan", {method:"POST", body:{start, jobs, home:$("home").checked, tolls:$("tolls").checked}});
+    const next = {start, jobs, home:$("home").checked, tolls:$("tolls").checked, order:res.order.map(i => jobs[i].id), missed:(res.missed || []).map(i => jobs[i].id), line:res.line || []};
     const saved = await api("day?d=" + today(), {method:"PUT", body:next});
     route = next; updated = saved.updated;
     done = new Set([...done].filter(id => jobs.some(j => j.id === id)));
@@ -526,9 +527,9 @@ async function loadDay(fillForm){
   if (fillForm || (changed && !editing)){
     const draft = fillForm ? loadDraft() : null;
     if (route && (!draft || formSnapshot() === routeSnapshot(route) || !draft.jobs.some(j => j.value))){
-      $("start").value = route.start.label; setPlace($("start"), route.start); $("home").checked = !!route.home; setJobs(route.jobs);
+      $("start").value = route.start.label; setPlace($("start"), route.start); $("home").checked = !!route.home; $("tolls").checked = route.tolls !== false; setJobs(route.jobs);
     } else if (draft){
-      $("start").value = draft.start.value || DEFAULT_START; setPlace($("start"), draft.start.p); $("home").checked = draft.home !== false;
+      $("start").value = draft.start.value || DEFAULT_START; setPlace($("start"), draft.start.p); $("home").checked = draft.home !== false; $("tolls").checked = draft.tolls !== false;
       setJobs(draft.jobs.map(j => j.p ? {...j.p, label:j.value} : j.value).filter(Boolean));
     }
   }
@@ -545,7 +546,7 @@ document.addEventListener("visibilitychange", () => { if (document.visibilitySta
 /* ============ wiring ============ */
 wireBox($("start"));
 $("out").addEventListener("click", e => { if (e.target.closest('.nav[aria-disabled="true"]')) e.preventDefault(); });
-$("home").addEventListener("change", () => { saveDraft(); markStale(); });
+["home","tolls"].forEach(id => $(id).addEventListener("change", () => { saveDraft(); markStale(); }));
 $("go").addEventListener("click", plan);
 $("add").addEventListener("click", () => { const inp = addRow(); syncRows(); saveDraft(); inp.focus(); });
 let clearArmed = 0;
