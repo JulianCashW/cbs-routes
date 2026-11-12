@@ -486,18 +486,18 @@ function suggestInto(st, text, show){
   const q = normQ(text);
   if (q.length < 3){ show([], ""); return; }
   const quick = quickSugg(text);
-  if (sugCache.has(q)){ show(quick, quick.length ? "" : "No matches. Keep typing, or add the city."); return; }
-  show(quick || [], quick && quick.length ? "" : "Searching…");
+  if (sugCache.has(q)){ show(quick, ""); return; }
+  show(quick || [], "");                 // the list only appears when there are matches
   st.timer = setTimeout(async () => {
     const seq = st.seq = (st.seq || 0) + 1, ctl = st.ctl = new AbortController();
     try {
       const {results} = await api("suggest?text=" + encodeURIComponent(text.trim()), {signal:ctl.signal, timeout:7000});
       sugCache.set(q, results || []); if (sugCache.size > 300) sugCache.delete(sugCache.keys().next().value);
       if (seq !== st.seq) return;
-      show(results || [], (results || []).length ? "" : "No matches. Keep typing, or add the city.");
+      show(results || [], "");
     } catch(e){
       if (seq !== st.seq || e instanceof NeedPin) return;
-      show(quick || [], "Couldn't load suggestions. Keep typing to try again.");
+      show(quick || [], "");
     }
   }, 140);
 }
