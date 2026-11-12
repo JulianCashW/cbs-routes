@@ -16,7 +16,7 @@
 :root{
   --bg:#f2eee3; --surface:#faf8f3; --field:#ffffff; --soft:#efebe1; --line:#ddd7ca;
   --ink:#22201d; --muted:#6c675e; --accent:#b9bf8e; --accent-edge:#a5ac78; --on-accent:#23261a; --olive-ink:#868d5e;
-  --gold:#b8902e; --gold-soft:#ecd37f; --deep:#22201d; --on-deep:#faf8f3; --sky:#e2e4cd; --on-sky:#22201d; --route:#7e8653;
+  --gold:#c9971c; --gold-soft:#ecd37f; --gold-tint:#f8efd2; --gold-tint-on:#f1e3b6; --deep:#22201d; --on-deep:#faf8f3; --sky:#e2e4cd; --on-sky:#22201d; --route:#7e8653;
   --display:"Inter Tight","Helvetica Neue",Arial,sans-serif;
   --body:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   color-scheme:light;
@@ -148,13 +148,15 @@ textarea{width:100%;min-height:150px;font:inherit;font-size:16px;line-height:1.4
 .b-tools{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin:0 0 8px}
 .b-tools input{flex:1 1 220px;min-width:0;font-size:16px;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
 .b-list{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:12px;background:var(--field);max-height:520px;overflow:auto}
-.b-row{display:flex;align-items:center;gap:6px;padding:8px 8px 8px 12px;border-top:1px solid var(--line);font-size:14px}
+.b-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 8px 8px 12px;border-top:1px solid var(--line);font-size:14px}
 .b-row:first-child{border-top:0}
 .b-row label{display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer}
-.b-row input{width:20px;height:20px;margin:0;flex:none;accent-color:var(--olive-ink)}
+.b-row input[type=checkbox]{width:20px;height:20px;margin:0;flex:none;accent-color:var(--olive-ink)}
 .b-num{flex:none;min-width:26px;height:22px;padding:0 6px;border-radius:11px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font:700 11px var(--display);font-variant-numeric:tabular-nums}
 .b-addr{overflow-wrap:anywhere}
+.b-row.star{background:var(--gold-tint);box-shadow:inset 3px 0 0 var(--gold)}
 .b-row.on{background:var(--soft)}
+.b-row.star.on{background:var(--gold-tint-on)}
 .b-row.on .b-num{background:var(--ink);color:var(--on-deep)}
 .b-row.sent .b-addr{color:var(--muted)}
 .b-row.sent .b-num{background:var(--line);color:var(--muted)}
@@ -168,7 +170,10 @@ textarea{width:100%;min-height:150px;font:inherit;font-size:16px;line-height:1.4
 .b-ic:hover{background:var(--soft);color:var(--ink)}
 .b-ic.on{color:var(--gold)}
 .b-ic.on svg{fill:currentColor}
-.b-edit{flex:1;min-width:0;font-size:16px;background:var(--field);border:1px solid var(--accent-edge);border-radius:8px;padding:6px 10px}
+.b-editor{flex:1 1 100%;display:flex;flex-wrap:wrap;gap:8px;padding:6px 0 4px 30px}
+.b-editor input{flex:1 1 100%;width:100%;height:auto;margin:0;font-size:16px;background:var(--field);border:1px solid var(--accent-edge);border-radius:10px;padding:9px 12px}
+.b-editor .btn{padding:9px 16px;font-size:14px}
+.b-editor .btn-main{width:auto;min-height:0}
 .b-filter{appearance:none;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:14px;font-weight:600;padding:8px 12px;border-radius:999px;cursor:pointer;white-space:nowrap}
 .b-filter[aria-pressed="true"]{background:var(--gold-soft);border-color:var(--gold);color:var(--ink)}
 .b-empty{padding:14px 12px;color:var(--muted);font-size:14px}
@@ -176,7 +181,8 @@ textarea{width:100%;min-height:150px;font:inherit;font-size:16px;line-height:1.4
 .b-bad-h{display:flex;gap:10px;align-items:baseline}
 .b-bad ul{margin:6px 0 0;padding-left:18px;color:var(--muted)}
 .b-pin{appearance:none;min-width:24px;height:24px;padding:0 5px;border-radius:12px;border:2px solid #fff;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font:700 11px var(--display);box-shadow:0 1px 3px rgba(0,0,0,.3);cursor:pointer}
-.b-pin.star{background:var(--gold-soft);color:#2b2410}
+.b-pin.star{background:var(--gold);color:#fff}
+.b-pin.star.sel{background:var(--ink);box-shadow:0 0 0 3px var(--gold),0 1px 3px rgba(0,0,0,.3)}
 .b-pin.sel{background:var(--ink);color:var(--on-deep);transform:scale(1.2)}
 .b-pin.sent{opacity:.35}
 
@@ -646,7 +652,7 @@ const IC = {
   edit:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>',
   show:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.6-6-11a6 6 0 0 1 12 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg>'
 };
-let editing = null;   // id of the row whose name is being typed
+let editing = null, editDraft = "";   // the row whose name is being typed, and what's typed so far
 const bstatus = (text, err) => { const s = $("bulk-status"); s.textContent = text; s.className = "status" + (err ? " err" : ""); };
 
 async function putOnMap(){
@@ -689,16 +695,18 @@ function renderList(){
   const shown = ok.map((b, i) => ({b, n:i+1})).filter(({b}) => (!starsOnly || b.star) &&
     (!q || [b.name, nameOf(b), b.text].some(t => t && t.toLowerCase().includes(q))));
   $("bulk-list").innerHTML = shown.length ? shown.map(({b, n}) => {
-    const id = esc(b.id), main = editing === b.id
-      ? `<input type="checkbox" data-id="${id}" aria-label="Select ${n}"><span class="b-num">${n}</span><input class="b-edit" type="text" data-name="${id}" value="${esc(b.name || "")}" placeholder="Name (optional)" aria-label="Name for ${esc(nameOf(b))}" enterkeyhint="done">`
-      : `<label><input type="checkbox" data-id="${id}"><span class="b-num">${n}</span><span class="b-text">${b.name ? `<span class="b-name">${esc(b.name)}</span>` : ""}<span class="b-addr">${esc(nameOf(b))}</span></span></label>`;
-    return `<li class="b-row${b.sent ? " sent" : ""}" data-id="${id}">${main}${b.sent ? "<small>On route</small>" : ""}<div class="b-acts">` +
+    const id = esc(b.id), main = `<label><input type="checkbox" data-id="${id}"><span class="b-num">${n}</span><span class="b-text">${b.name ? `<span class="b-name">${esc(b.name)}</span>` : ""}<span class="b-addr">${esc(nameOf(b))}</span></span></label>`;
+    const editor = editing === b.id
+      ? `<form class="b-editor" data-name="${id}"><input type="text" value="${esc(editDraft)}" maxlength="80" placeholder="Customer name" aria-label="Name for ${esc(nameOf(b))}" autocomplete="off" enterkeyhint="done">` +
+        `<button class="btn btn-main" type="submit">Save</button><button class="btn btn-line" type="button" data-cancel>Cancel</button></form>` : "";
+    return `<li class="b-row${b.sent ? " sent" : ""}${b.star ? " star" : ""}" data-id="${id}">${main}${b.sent ? "<small>On route</small>" : ""}<div class="b-acts">` +
       `<button class="b-ic${b.star ? " on" : ""}" type="button" data-star="${id}" aria-pressed="${!!b.star}" aria-label="Premium" title="Premium">${IC.star}</button>` +
       `<button class="b-ic" type="button" data-edit="${id}" aria-label="${b.name ? "Edit name" : "Add a name"}" title="${b.name ? "Edit name" : "Add a name"}">${IC.edit}</button>` +
-      `<button class="b-ic" type="button" data-show="${id}" aria-label="Show ${n} on the map" title="Show on map">${IC.show}</button></div></li>`;
+      `<button class="b-ic" type="button" data-show="${id}" aria-label="Show ${n} on the map" title="Show on map">${IC.show}</button></div>${editor}</li>`;
   }).join("")
     : `<li class="b-empty">${!ok.length ? "None of these were found yet." : starsOnly && !ok.some(b => b.star) ? "No premium addresses yet. Tap the star on a row to mark one." : "Nothing matches that search."}</li>`;
-  const ed = $("bulk-list").querySelector(".b-edit"); if (ed){ ed.focus(); ed.setSelectionRange(ed.value.length, ed.value.length); }
+  const ed = $("bulk-list").querySelector(".b-editor input");
+  if (ed && document.activeElement !== $("bulk-find")){ ed.focus({preventScroll:true}); ed.setSelectionRange(ed.value.length, ed.value.length); }
   $("bulk-bad").innerHTML = bad.length ? `<div class="b-bad"><div class="b-bad-h"><b>⚠ Not found (${bad.length})</b><button class="btn-link" type="button" id="bulk-dropbad">Remove these</button></div>` +
     `<ul>${bad.map(b => `<li>${esc(b.text)}</li>`).join("")}</ul></div>` : "";
   updatePicks();
@@ -770,24 +778,24 @@ $("bulk-addsel").addEventListener("click", () => addToRoute([...picked]));
 $("bulk-unsel").addEventListener("click", () => { picked.clear(); updatePicks(); });
 $("bulk-remove").addEventListener("click", () => { bulk = bulk.filter(b => !picked.has(b.id)); picked.clear(); saveBulk(); renderBulk(false); });
 $("bulk-list").addEventListener("change", e => { const c = e.target.closest("input[data-id]"); if (c) togglePick(c.dataset.id); });
-// names: save when the box loses focus or Enter is pressed; Escape cancels
-function saveName(inp, keep){
-  const b = bulk.find(x => x.id === inp.dataset.name); editing = null;
-  if (b && keep){ const v = inp.value.trim().slice(0, 80); if (v) b.name = v; else delete b.name; saveBulk(); drawBulkMap(false); }
-  renderList();
+// names: a small form under the row. Save (or Enter) keeps it, Cancel (or Escape) drops it.
+// What's typed is remembered, so the box survives the list redrawing.
+function openName(id){ const b = bulk.find(x => x.id === id); editing = b ? id : null; editDraft = b && b.name || ""; renderList(); }
+function closeName(save){
+  const b = bulk.find(x => x.id === editing);
+  if (b && save){ const v = editDraft.trim().slice(0, 80); if (v) b.name = v; else delete b.name; saveBulk(); drawBulkMap(false); }
+  editing = null; editDraft = ""; renderList();
 }
-$("bulk-list").addEventListener("keydown", e => {
-  const inp = e.target.closest(".b-edit"); if (!inp) return;
-  if (e.key === "Enter"){ e.preventDefault(); inp.dataset.done = "1"; saveName(inp, true); }
-  if (e.key === "Escape"){ inp.dataset.done = "1"; saveName(inp, false); }
-});
-$("bulk-list").addEventListener("focusout", e => { const inp = e.target.closest(".b-edit"); if (inp && !inp.dataset.done){ inp.dataset.done = "1"; saveName(inp, true); } });
+$("bulk-list").addEventListener("submit", e => { e.preventDefault(); closeName(true); });
+$("bulk-list").addEventListener("input", e => { if (e.target.closest(".b-editor")) editDraft = e.target.value; });
+$("bulk-list").addEventListener("keydown", e => { if (e.key === "Escape" && e.target.closest(".b-editor")) closeName(false); });
 $("bulk-stars").addEventListener("click", () => { const b = $("bulk-stars"); b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true")); renderList(); });
 $("bulk-list").addEventListener("click", e => {
   const st = e.target.closest("[data-star]");
   if (st){ const b = bulk.find(x => x.id === st.dataset.star); if (b){ b.star = !b.star; if (!b.star) delete b.star; saveBulk(); renderList(); drawBulkMap(false); updatePicks(); } return; }
   const ed = e.target.closest("[data-edit]");
-  if (ed){ editing = editing === ed.dataset.edit ? null : ed.dataset.edit; renderList(); return; }
+  if (ed){ editing === ed.dataset.edit ? closeName(false) : openName(ed.dataset.edit); return; }
+  if (e.target.closest("[data-cancel]")){ closeName(false); return; }
   const s = e.target.closest("[data-show]"); if (!s || !bmap) return;
   const b = bulk.find(x => x.id === s.dataset.show); if (!b) return;
   bmap.flyTo({center:[b.lon, b.lat], zoom:15});
