@@ -317,6 +317,7 @@ body.sheet-open{overflow:hidden}
 .b-due{font-weight:700;color:#fff;background:#d08a1e;box-shadow:0 1px 2px rgba(0,0,0,.12)}
 .b-due.late{background:#b94a1c}
 .b-next{font-weight:700;color:var(--olive-ink);background:var(--field);border:1px solid var(--line)}
+.b-meta > .b-soon{font-weight:700;color:#5a4405;background:#f7e4a6;border:1px solid #e8c24c}
 .b-meta > .b-last{color:var(--muted);font-weight:600;padding-inline:2px}
 .b-note{font-size:12.5px;color:var(--muted);font-style:italic;margin-top:2px;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
@@ -338,8 +339,9 @@ body.sheet-open{overflow:hidden}
 .b-pin.star{background:var(--gold);color:#fff}
 .b-pin.ok{background:#4f8a4b;color:#fff}
 .b-pin.due{background:#d08a1e;color:#fff}
+.b-pin.soon{background:#e8c24c;color:#3a2f0b}
 .b-pin.late{background:#b94a1c;color:#fff}
-.b-pin.star.ok,.b-pin.star.due,.b-pin.star.late{box-shadow:0 0 0 3px var(--gold),0 1px 3px rgba(0,0,0,.3)}
+.b-pin.star.ok,.b-pin.star.due,.b-pin.star.late,.b-pin.star.soon{box-shadow:0 0 0 3px var(--gold),0 1px 3px rgba(0,0,0,.3)}
 .pin-name{display:none;position:absolute;left:calc(100% + 5px);top:50%;transform:translateY(-50%);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   background:var(--surface);color:var(--ink);font:600 11.5px var(--body);padding:2px 7px;border-radius:7px;box-shadow:0 1px 3px rgba(0,0,0,.2);pointer-events:none}
 .show-names .pin-name{display:block}
@@ -354,7 +356,7 @@ body.sheet-open{overflow:hidden}
 .map-key{display:flex;flex-wrap:wrap;gap:4px 14px;margin:8px 4px 0;font-size:12px;color:var(--muted);font-weight:600}
 .map-key span{display:inline-flex;align-items:center;gap:6px}
 .map-key i{width:10px;height:10px;border-radius:50%;display:inline-block}
-.map-key .k-ok{background:#4f8a4b}.map-key .k-due{background:#d08a1e}.map-key .k-late{background:#b94a1c}
+.map-key .k-ok{background:#4f8a4b}.map-key .k-soon{background:#e8c24c}.map-key .k-due{background:#d08a1e}.map-key .k-late{background:#b94a1c}
 .map-key .k-star{background:var(--surface);box-shadow:0 0 0 2.5px var(--gold) inset}
 .b-pin.star.sel{background:var(--ink);box-shadow:0 0 0 3px var(--gold),0 1px 3px rgba(0,0,0,.3)}
 .b-pin.sel{background:var(--ink);color:var(--on-deep);box-shadow:0 0 0 3px var(--surface),0 0 0 5px var(--ink),0 1px 3px rgba(0,0,0,.3);z-index:2}
@@ -473,7 +475,7 @@ body.sheet-open{overflow:hidden}
         <div class="area-layer" id="area-layer" hidden><div class="area-box" id="area-box" hidden></div><p class="area-hint">Drag across the pins you want</p></div>
       </div>
       <div class="map-key" aria-label="Pin colors">
-        <span><i class="k-ok"></i>Recently done</span><span><i class="k-due"></i>Due</span><span><i class="k-late"></i>Overdue</span><span><i class="k-star"></i>Premium</span>
+        <span><i class="k-ok"></i>Recently done</span><span><i class="k-soon"></i>Upcoming</span><span><i class="k-due"></i>Due</span><span><i class="k-late"></i>Overdue</span><span><i class="k-star"></i>Premium</span>
       </div>
       <p class="credit">Tap a pin to select it · Addresses by <a href="https://www.geoapify.com/" target="_blank" rel="noopener">Geoapify</a></p>
     </section>
@@ -951,12 +953,21 @@ const dayStr = d => d.toLocaleDateString("en-CA");
 const addDays = (s, n) => { const d = dayObj(s); d.setDate(d.getDate() + n); return dayStr(d); };
 const daysFrom = (a, b) => Math.round((dayObj(b) - dayObj(a)) / 864e5);
 const fmtDay = s => { const d = dayObj(s); return d.toLocaleDateString("en-US", d.getFullYear() === new Date().getFullYear() ? {month:"short", day:"numeric"} : {month:"short", day:"numeric", year:"numeric"}); };
-function dueOf(c){                       // null when there's no schedule (or the customer is paused)
+// When is this customer next due? Their schedule from the last visit (or from today if they've never
+// had one), moved to their next service day if they have days set. Null with no schedule or when paused.
+function nextServiceDay(from, days){
+  if (!days || !days.length) return from;
+  for (let i = 0; i < 7; i++){ const d = addDays(from, i); if (days.includes(dayObj(d).getDay())) return d; }
+  return from;
+}
+function dueOf(c){
   if (!c.freq || c.paused) return null;
-  const last = (c.hist || [])[0];
-  if (!last) return {due:true, text:"Due"};
-  const next = addDays(last, c.freq), wait = daysFrom(today(), next);
-  return wait <= 0 ? {due:true, text: wait < 0 ? "Overdue" : "Due today"} : {due:false, text:"Next " + fmtDay(next)};
+  const last = (c.hist || [])[0], t = today();
+  const next = nextServiceDay(last ? addDays(last, c.freq) : t, c.days), wait = daysFrom(t, next);
+  if (wait < 0) return {due:true, late:true, next, text:"Overdue"};
+  if (wait === 0) return {due:true, next, text:"Due today"};
+  if (wait <= 2) return {due:false, soon:true, next, text:"Upcoming · " + (wait === 1 ? "tomorrow" : dayObj(next).toLocaleDateString("en-US", {weekday:"short"}))};
+  return {due:false, next, text:"Next " + fmtDay(next)};
 }
 
 /* ---- saving: this phone first, then the backup ---- */
@@ -1123,7 +1134,7 @@ function row(c, n){
   const meta = (c.freq ? `<span class="b-tag">${esc(FREQ_SHORT[c.freq] || `Every ${c.freq} days`)}</span>` : "") +
     ((c.days || []).length ? `<span class="b-tag b-tag-day">${esc(WEEK.filter(d => c.days.includes(d)).map(d => DAY_NAMES[d]).join(" · "))}</span>` : "") +
     (last ? `<span class="b-last">Last ${esc(fmtDay(last))}</span>` : "");
-  const dueTag = c.paused ? `<span class="b-paused">Paused</span>` : due ? `<span class="${due.due ? "b-due" + (due.text === "Overdue" ? " late" : "") : "b-next"}">${esc(due.text)}</span>` : "";
+  const dueTag = c.paused ? `<span class="b-paused">Paused</span>` : due ? `<span class="${due.due ? "b-due" + (due.late ? " late" : "") : due.soon ? "b-soon" : "b-next"}">${esc(due.text)}</span>` : "";
   const sentTag = (c.hidden ? `<span class="b-hidden">Hidden on map</span>` : "") + (sent ? `<span class="b-onroute">On route</span>` : "");
   return `<li class="b-row${sent ? " sent" : ""}${c.star ? " star" : ""}${c.paused ? " paused" : ""}${c.hidden ? " hidden-pin" : ""}" data-id="${id}">` +
     `<input type="checkbox" id="cb-${id}" data-id="${id}" aria-label="Select ${esc(c.name || shortAddr(c))}">` +
@@ -1195,7 +1206,10 @@ function drawBulkMap(fit){
 function pinStatus(c){
   if (c.paused || !c.freq) return "";
   const d = dueOf(c); if (!d) return "";
-  return d.due ? (d.text === "Overdue" ? " late" : " due") : " ok";
+  if (d.late) return " late";
+  if (d.due) return " due";
+  if (d.soon) return " soon";
+  return (c.hist || []).length ? " ok" : "";
 }
 // names appear next to pins once you're zoomed in to street level
 function showNames(){ if (bmap) $("bulk-map").classList.toggle("show-names", (bmap.getZoom ? bmap.getZoom() : 0) >= 14); }
@@ -1352,7 +1366,7 @@ $("bulk-export").addEventListener("click", () => {
   onMap().forEach((c, i) => {
     const d = dueOf(c), last = (c.hist || [])[0];
     rows.push([i + 1, c.name || "", nameOf(c), c.star ? "Yes" : "", c.paused ? "Yes" : "", c.hidden ? "Yes" : "", c.freq ? (FREQS.find(f => f[0] === c.freq) || [0, c.freq + " days"])[1] : "",
-      WEEK.filter(n => (c.days || []).includes(n)).map(n => DAY_NAMES[n]).join(" "), last || "", d ? (d.due ? d.text : addDays(last, c.freq)) : "",
+      WEEK.filter(n => (c.days || []).includes(n)).map(n => DAY_NAMES[n]).join(" "), last || "", d ? d.next : "",
       (c.hist || []).length || "", (c.hist || []).slice().reverse().join(" "), c.notes || ""]);
   });
   live().filter(c => c.bad).forEach(c => rows.push(["", c.name || "", c.text, "", "", "", "", "", "", "", "", "", "Address not found"]));
