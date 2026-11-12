@@ -727,8 +727,10 @@ function drawBulkMap(fit){
     const hq = document.createElement("div"); hq.className = "m-hq"; hq.innerHTML = HOUSE; hq.title = "HQ";
     bmarks.push({marker:new maplibregl.Marker({element:hq}).setLngLat([hqPlace.lon, hqPlace.lat]).addTo(bmap)});
   }
-  const ok = onMap();
+  const ok = onMap(), starsOnly = $("bulk-stars").getAttribute("aria-pressed") === "true";
+  const shown = ok.filter(b => !starsOnly || b.star);   // the Premium button hides everyone else's pins
   ok.forEach((b, i) => {
+    if (starsOnly && !b.star) return;
     const el = document.createElement("button"); el.type = "button";
     el.className = "b-pin" + (b.sent ? " sent" : "") + (b.star ? " star" : ""); el.textContent = i + 1;
     el.title = (b.name ? b.name + " · " : "") + nameOf(b) + (b.star ? " · Premium" : "");
@@ -736,8 +738,8 @@ function drawBulkMap(fit){
     el.addEventListener("click", e => { e.stopPropagation(); togglePick(b.id); });
     bmarks.push({id:b.id, el, marker:new maplibregl.Marker({element:el}).setLngLat([b.lon, b.lat]).addTo(bmap)});
   });
-  if (fit && ok.length){
-    const pts = ok.map(b => [b.lon, b.lat]);
+  if (fit && shown.length){
+    const pts = shown.map(b => [b.lon, b.lat]);
     bmap.fitBounds(pts.reduce((bb, p) => bb.extend(p), new maplibregl.LngLatBounds(pts[0], pts[0])), {padding:40, duration:0, maxZoom:14});
   }
 }
@@ -789,7 +791,7 @@ function closeName(save){
 $("bulk-list").addEventListener("submit", e => { e.preventDefault(); closeName(true); });
 $("bulk-list").addEventListener("input", e => { if (e.target.closest(".b-editor")) editDraft = e.target.value; });
 $("bulk-list").addEventListener("keydown", e => { if (e.key === "Escape" && e.target.closest(".b-editor")) closeName(false); });
-$("bulk-stars").addEventListener("click", () => { const b = $("bulk-stars"); b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true")); renderList(); });
+$("bulk-stars").addEventListener("click", () => { const b = $("bulk-stars"); b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true")); renderList(); drawBulkMap(true); updatePicks(); });
 $("bulk-list").addEventListener("click", e => {
   const st = e.target.closest("[data-star]");
   if (st){ const b = bulk.find(x => x.id === st.dataset.star); if (b){ b.star = !b.star; if (!b.star) delete b.star; saveBulk(); renderList(); drawBulkMap(false); updatePicks(); } return; }
