@@ -130,6 +130,16 @@ input[type=text],input[type=password]{width:100%;font-size:16px;background:var(-
 }
 .empty{color:var(--muted);text-align:center;padding:36px 10px}
 .empty svg{display:block;margin:0 auto 10px;width:72px;height:72px}
+/* dropdowns: plain field with a small chevron, matching the inputs */
+select{appearance:none;-webkit-appearance:none;font:inherit;font-size:16px;color:var(--ink);background-color:var(--field);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236c675e' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-size:16px 16px;background-position:right 14px center;
+  border:1px solid var(--line);border-radius:10px;padding:10px 40px 10px 12px;cursor:pointer;line-height:1.3}
+select:hover{border-color:var(--accent-edge)}
+select:focus-visible{outline:3px solid var(--accent-edge);outline-offset:2px}
+input[type=date]{appearance:none;-webkit-appearance:none;cursor:pointer}
+input[type=date]::-webkit-calendar-picker-indicator{opacity:.55;cursor:pointer}
+
 /* tabs */
 main .tabs-wrap{display:block;padding-block:18px 0}
 .tabs{display:flex;gap:6px;flex-wrap:wrap}
@@ -148,7 +158,7 @@ textarea{width:100%;min-height:150px;font:inherit;font-size:16px;line-height:1.4
 .b-tools{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin:0 0 8px}
 .b-tools input{flex:1 1 220px;min-width:0;font-size:16px;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
 .b-list{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:12px;background:var(--field);max-height:520px;overflow:auto}
-.b-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 8px 8px 12px;border-top:1px solid var(--line);font-size:14px}
+.b-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 10px;border-top:1px solid var(--line);font-size:14px}
 .b-row:first-child{border-top:0}
 .b-row label{display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer}
 .b-row input[type=checkbox]{width:20px;height:20px;margin:0;flex:none;accent-color:var(--olive-ink)}
@@ -170,10 +180,11 @@ textarea{width:100%;min-height:150px;font:inherit;font-size:16px;line-height:1.4
 .b-ic:hover{background:var(--soft);color:var(--ink)}
 .b-ic.on{color:var(--gold)}
 .b-ic.on svg{fill:currentColor}
-.b-editor{flex:1 1 100%;display:grid;gap:12px;padding:10px 0 6px 30px;cursor:auto}
+.b-editor{flex:1 1 100%;display:grid;gap:14px;margin:6px 0 4px;padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:12px;cursor:auto;box-shadow:0 1px 2px rgba(34,32,29,.04)}
 .b-editor .f{display:grid;gap:5px;font-size:13px;font-weight:700;color:var(--ink);border:0;margin:0;padding:0;min-width:0}
 .b-editor legend{padding:0;margin:0 0 5px}
-.b-editor input[type=text],.b-editor input[type=date],.b-editor textarea,.b-editor select{width:100%;min-height:0;margin:0;font:inherit;font-size:16px;font-weight:400;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+.b-editor input[type=text],.b-editor input[type=date],.b-editor textarea,.b-editor select{width:100%;min-height:44px;margin:0;font:inherit;font-size:16px;font-weight:400;color:var(--ink);background-color:var(--field);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+.b-editor select{padding-right:40px}
 .b-editor textarea{min-height:64px;resize:vertical}
 .b-editor input:focus,.b-editor textarea:focus,.b-editor select:focus{border-color:var(--accent-edge)}
 .b-days{display:flex;flex-wrap:wrap;gap:6px}
@@ -187,16 +198,19 @@ textarea{width:100%;min-height:150px;font:inherit;font-size:16px;line-height:1.4
 .b-visit button{appearance:none;border:0;background:transparent;color:var(--muted);width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:16px;line-height:1}
 .b-visit button:hover{background:var(--line);color:var(--ink)}
 .b-hint{margin:0 0 8px;font-size:13px;font-weight:400;color:var(--muted)}
-.b-addvisit{display:flex;gap:8px}
+.b-addvisit{display:flex;gap:8px;align-items:stretch}
+.b-addvisit .btn{flex:none;white-space:nowrap}
 .b-addvisit input{flex:1;min-width:0}
-.b-ed-btns{display:flex;gap:8px}
+.b-ed-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-top:2px}
+.b-ed-btns .btn{width:100%;min-height:44px}
 .b-editor .btn{padding:9px 16px;font-size:14px}
 .b-editor .btn-main{width:auto;min-height:0;padding:9px 22px}
 .b-meta{display:flex;flex-wrap:wrap;gap:2px 8px;font-size:12px;color:var(--muted);margin-top:3px}
 .b-due{font-weight:700;color:#7a3f0c;background:#f5dfc7;border-radius:6px;padding:0 6px}
 .b-next{font-weight:600;color:var(--olive-ink)}
 .b-note{font-size:12.5px;color:var(--muted);font-style:italic;margin-top:2px;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.b-tools select{font-size:14px;padding:8px 10px;border-radius:999px}
+.b-list:has(.b-editor){max-height:none}   /* let the open editor show in full */
+.b-tools select{background-color:transparent;font-size:14px;font-weight:600;color:var(--muted);height:38px;min-height:0;padding:0 34px 0 14px;border-radius:999px;background-position:right 12px center}
 .b-sync{margin:10px 0 0;font-size:13px;color:var(--muted)}
 .b-sync:empty{display:none}
 .star-tag{color:var(--gold)}
