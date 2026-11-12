@@ -4,7 +4,7 @@
 // Needs, in the Cloudflare Pages project settings:
 //   Secret  GEOAPIFY_KEY  — your Geoapify API key (kept here, never sent to phones)
 //   Secret  CREW_PIN      — the PIN you and your crew type to get in
-//   D1 binding named DB   — the free database that holds today's route and check marks
+//   D1 binding named DB   — kept so older shared data can be erased; nothing is stored there now
 
 const GEO = "https://api.geoapify.com/v1";
 // Keep lookups in and around Virginia, nearest to Chesapeake first.
@@ -31,19 +31,14 @@ function sameText(a, b) {                           // compare without leaking t
   let diff = 0; for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return diff === 0;
 }
-const validDay = d => /^\d{4}-\d{2}-\d{2}$/.test(d || "");
 
-let tablesReady = false;
-async function ensureTables(db) {
-  if (tablesReady) return;
-  await db.batch([
-    db.prepare("CREATE TABLE IF NOT EXISTS days (day TEXT PRIMARY KEY, data TEXT NOT NULL, updated INTEGER NOT NULL)"),
-    db.prepare("CREATE TABLE IF NOT EXISTS marks (day TEXT NOT NULL, job TEXT NOT NULL, at INTEGER NOT NULL, PRIMARY KEY (day, job))"),
-    db.prepare("CREATE TABLE IF NOT EXISTS customers (k INTEGER PRIMARY KEY, data TEXT NOT NULL, updated INTEGER NOT NULL)"),
-    db.prepare("CREATE TABLE IF NOT EXISTS route_log (id TEXT PRIMARY KEY, day TEXT NOT NULL, data TEXT NOT NULL, at INTEGER NOT NULL)"),
-    db.prepare("CREATE INDEX IF NOT EXISTS route_log_day ON route_log (day)")
-  ]);
-  tablesReady = true;
+// Everything (routes, customers, the route log) now lives on each phone. Shared tables from earlier
+// versions are erased the first time this runs, so no old data stays on the server.
+let cleaned = false;
+async function eraseOldShared(db) {
+  if (cleaned || !db) return;
+  await db.batch(["days", "marks", "customers", "route_log"].map(t => db.prepare(`DROP TABLE IF EXISTS ${t}`)));
+  cleaned = true;
 }
 
 // Trim a Geoapify result down to what the page needs.
@@ -161,106 +156,6 @@ async function roadLine(stops, avoidTolls, env) {
   } catch (e) { return null; }
 }
 
-async function getDay(url, env) {
-  const day = url.searchParams.get("d");
-  if (!validDay(day)) return fail(400, "Bad date");
-  await ensureTables(env.DB);
-  const row = await env.DB.prepare("SELECT data, updated FROM days WHERE day = ?").bind(day).first();
-  const marks = await env.DB.prepare("SELECT job FROM marks WHERE day = ?").bind(day).all();
-  return json({ route: row ? JSON.parse(row.data) : null, updated: row ? row.updated : 0, done: (marks.results || []).map(m => m.job) });
-}
-
-async function saveDay(request, url, env) {
-  const day = url.searchParams.get("d");
-  if (!validDay(day)) return fail(400, "Bad date");
-  const route = await request.json().catch(() => null);
-  if (!route || !Array.isArray(route.jobs)) return fail(400, "Missing route");
-  const data = JSON.stringify(route);
-  if (data.length > 200000) return fail(413, "Route too large");
-  await ensureTables(env.DB);
-  const now = Date.now();
-  await env.DB.batch([
-    env.DB.prepare("INSERT INTO days (day, data, updated) VALUES (?, ?, ?) ON CONFLICT(day) DO UPDATE SET data = excluded.data, updated = excluded.updated").bind(day, data, now),
-    // drop check marks for jobs that are no longer on the route
-    env.DB.prepare(`DELETE FROM marks WHERE day = ? AND job NOT IN (SELECT value FROM json_each(?))`).bind(day, JSON.stringify(route.jobs.map(j => String(j.id))))
-  ]);
-  return json({ ok: true, updated: now });
-}
-
-async function clearDay(url, env) {
-  const day = url.searchParams.get("d");
-  if (!validDay(day)) return fail(400, "Bad date");
-  await ensureTables(env.DB);
-  await env.DB.batch([
-    env.DB.prepare("DELETE FROM days WHERE day = ?").bind(day),
-    env.DB.prepare("DELETE FROM marks WHERE day = ?").bind(day)
-  ]);
-  return json({ ok: true });
-}
-
-async function mark(request, url, env) {
-  const day = url.searchParams.get("d");
-  const { job, done } = await request.json().catch(() => ({}));
-  if (!validDay(day) || !job) return fail(400, "Bad request");
-  await ensureTables(env.DB);
-  if (done) await env.DB.prepare("INSERT OR IGNORE INTO marks (day, job, at) VALUES (?, ?, ?)").bind(day, String(job), Date.now()).run();
-  else await env.DB.prepare("DELETE FROM marks WHERE day = ? AND job = ?").bind(day, String(job)).run();
-  return json({ ok: true });
-}
-
-/* ---------------- customer list (backup, shared by every phone) ---------------- */
-// Each customer carries "mod" (when it last changed). Merging keeps the newest copy of each,
-// so two phones editing different customers never undo each other. Removed customers stay as
-// small "del" markers for 60 days so the removal reaches every phone.
-function mergeCustomers(a, b) {
-  const byId = new Map();
-  for (const c of [...a, ...b]) {
-    if (!c || typeof c.id !== "string") continue;
-    const cur = byId.get(c.id);
-    if (!cur || (c.mod || 0) > (cur.mod || 0)) byId.set(c.id, c);
-  }
-  const cutoff = Date.now() - 60 * 864e5;
-  return [...byId.values()].filter(c => !(c.del && (c.mod || 0) < cutoff)).sort((x, y) => (x.born || 0) - (y.born || 0));
-}
-async function readCustomers(env) {
-  await ensureTables(env.DB);
-  const row = await env.DB.prepare("SELECT data, updated FROM customers WHERE k = 1").first();
-  return { list: row ? JSON.parse(row.data) : [], updated: row ? row.updated : 0 };
-}
-async function getCustomers(env) { return json(await readCustomers(env)); }
-async function saveCustomers(request, env) {
-  const body = await request.json().catch(() => null);
-  if (!body || !Array.isArray(body.list) || body.list.length > 10000) return fail(400, "Bad customer list");
-  const now = await readCustomers(env);
-  const list = mergeCustomers(now.list, body.list);
-  const data = JSON.stringify(list);
-  if (data.length > 1800000) return fail(413, "Customer list is too large to back up");
-  const updated = Date.now();
-  await env.DB.prepare("INSERT INTO customers (k, data, updated) VALUES (1, ?, ?) ON CONFLICT(k) DO UPDATE SET data = excluded.data, updated = excluded.updated").bind(data, updated).run();
-  return json({ list, updated });
-}
-
-/* ---------------- route log: every finished day, shared by every phone ---------------- */
-async function getLog(url, env) {
-  await ensureTables(env.DB);
-  const before = url.searchParams.get("before"), limit = Math.min(100, Math.max(1, +url.searchParams.get("limit") || 40));
-  const q = validDay(before)
-    ? env.DB.prepare("SELECT data FROM route_log WHERE day < ? ORDER BY day DESC, at DESC LIMIT ?").bind(before, limit)
-    : env.DB.prepare("SELECT data FROM route_log ORDER BY day DESC, at DESC LIMIT ?").bind(limit);
-  const rows = (await q.all()).results || [];
-  return json({ entries: rows.map(r => JSON.parse(r.data)) });
-}
-async function saveLog(request, env) {
-  const e = await request.json().catch(() => null);
-  if (!e || typeof e.id !== "string" || e.id.length > 80 || !validDay(e.day) || !Array.isArray(e.stops)) return fail(400, "Bad log entry");
-  const data = JSON.stringify(e);
-  if (data.length > 100000) return fail(413, "Log entry too large");
-  await ensureTables(env.DB);
-  await env.DB.prepare("INSERT INTO route_log (id, day, data, at) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET day = excluded.day, data = excluded.data, at = excluded.at")
-    .bind(e.id, e.day, data, Date.now()).run();
-  return json({ ok: true });
-}
-
 /* ---------------- entry point ---------------- */
 export async function onRequest(ctx) {
   const { request, env } = ctx;
@@ -278,18 +173,10 @@ export async function onRequest(ctx) {
     // everything below needs the crew PIN
     if (!sameText(readCookie(request, COOKIE), await sessionToken(env))) return fail(401, "PIN needed");
 
-    if (path === "session") return json({ ok: true });
+    if (path === "session") { await eraseOldShared(env.DB).catch(() => {}); return json({ ok: true }); }
     if (path === "suggest" && method === "GET") return await suggest(url, env, ctx);
     if (path === "geocode" && method === "GET") return await geocode(url, env, ctx);
     if (path === "plan" && method === "POST") return await plan(request, env);
-    if (path === "day" && method === "GET") return await getDay(url, env);
-    if (path === "day" && method === "PUT") return await saveDay(request, url, env);
-    if (path === "day" && method === "DELETE") return await clearDay(url, env);
-    if (path === "mark" && method === "POST") return await mark(request, url, env);
-    if (path === "customers" && method === "GET") return await getCustomers(env);
-    if (path === "customers" && method === "PUT") return await saveCustomers(request, env);
-    if (path === "log" && method === "GET") return await getLog(url, env);
-    if (path === "log" && method === "PUT") return await saveLog(request, env);
     return fail(404, "Not found");
   } catch (e) {
     return fail(500, "Something went wrong on the server. Try again.");

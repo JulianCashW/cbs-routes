@@ -522,7 +522,7 @@ body.sheet-open{overflow:hidden}
 <main id="app" hidden>
   <div class="wrap offline-wrap"><div class="offline" id="offline" role="status" hidden>
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 8.5a15 15 0 0 1 20 0M5.5 12a10 10 0 0 1 13 0M9 15.5a5 5 0 0 1 6 0"/><path d="M3 3l18 18"/></svg>
-    <span><b>No signal.</b> Your route and check-offs still work. Changes send when you're back online.</span>
+    <span><b>No signal.</b> Your routes, customers and check-offs still work. Planning a route and looking up addresses need signal.</span>
   </div></div>
   <div class="wrap tabs-wrap">
     <div class="tabs" role="tablist" aria-label="Tools">
@@ -564,7 +564,7 @@ body.sheet-open{overflow:hidden}
         <ol class="b-list" id="bulk-list" aria-label="Address index"></ol>
         <div id="bulk-bad"></div>
         <div class="b-foot">
-          <span class="b-sync" id="bulk-sync" aria-live="polite"></span>
+          <span class="b-sync">Saved on this phone</span>
           <span class="b-foot-links"><button class="btn-link" id="bulk-export" type="button">Download backup</button><button class="btn btn-line b-clear" id="bulk-clear" type="button">Clear list</button></span>
         </div>
       </div>
@@ -638,9 +638,8 @@ body.sheet-open{overflow:hidden}
   <div class="wrap" id="log" role="tabpanel" aria-labelledby="tab-log" hidden>
     <section class="panel" aria-labelledby="log-h">
       <div class="panel-h"><h2 id="log-h">Route log</h2><span class="progress" id="log-count"></span></div>
-      <p class="log-intro">Each day's route is saved here automatically when the day ends, with who was serviced.</p>
+      <p class="log-intro">Each day's route is saved on this phone automatically when the day ends, with who was serviced.</p>
       <div id="log-list"></div>
-      <button class="btn btn-soft log-more" id="log-more" type="button" hidden>Show older days</button>
     </section>
   </div>
 </main>
@@ -669,6 +668,15 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const key = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 const today = () => new Date().toLocaleDateString("en-CA");          // YYYY-MM-DD, local time
+// One-time fresh start: everything now lives only on each phone, so wipe what was saved before.
+// (The theme choice is kept.) Bump RESET to wipe every phone again in the future.
+const RESET = "per-phone-1";
+try {
+  if (localStorage.getItem("cbs-reset") !== RESET){
+    Object.keys(localStorage).filter(k => k.startsWith("cbs-") && k !== "cbs-theme").forEach(k => localStorage.removeItem(k));
+    localStorage.setItem("cbs-reset", RESET);
+  }
+} catch(e){}
 const HOUSE = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>';
 const OUT = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 5h5v5"/><path d="M19 5l-8 8"/><path d="M18 14v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h4"/></svg>';
 
@@ -1073,19 +1081,19 @@ function selectDay(d){
 }
 $("week").addEventListener("click", e => { const b = e.target.closest("[data-day]"); if (b) selectDay(b.dataset.day); });
 function drawClosed(){
-  const next = addDays(selDay, 7), entry = (logCache || []).find(e => e.day === selDay);
+  const next = addDays(selDay, 7), entry = logEntries.find(e => e.day === selDay);
   $("closed-card").innerHTML = `<h2>${DOW(selDay)}, ${fmtDay(selDay)} is closed</h2>
     <p>This day is over. ${DOW(selDay)} opens again next week, on ${fmtDay(next)}.</p>
-    ${entry ? logCard(entry, true) : `<p class="muted">${logLoaded ? "No route was saved for this day." : "Loading the log…"}</p>`}
+    ${entry ? logCard(entry, true) : `<p class="muted">No route was saved for this day.</p>`}
     <button class="btn btn-soft" type="button" id="closed-log">Open the Route log</button>`;
   $("closed-log").addEventListener("click", () => showTab("log"));
-  if (!entry && !logLoaded && !logBusy) loadLog(false);
 }
 
 /* ---- closing past days into the Route log ---- */
 let devId = ""; try { devId = localStorage.getItem("cbs-dev") || ""; if (!devId){ devId = Math.random().toString(36).slice(2, 10); localStorage.setItem("cbs-dev", devId); } } catch(e){ devId = "x"; }
-let logQueue = []; try { logQueue = JSON.parse(localStorage.getItem("cbs-logq") || "[]") || []; } catch(e){ logQueue = []; }
-const storeQueue = () => { try { localStorage.setItem("cbs-logq", JSON.stringify(logQueue)); } catch(e){} };
+// the route log lives on this phone: newest first
+let logEntries = []; try { logEntries = JSON.parse(localStorage.getItem("cbs-log") || "[]") || []; } catch(e){ logEntries = []; }
+const storeLog = () => { try { localStorage.setItem("cbs-log", JSON.stringify(logEntries)); } catch(e){} };
 function entryFor(day, pl){
   const r = pl.route, doneSet = new Set(pl.done || []), byId = Object.fromEntries(r.jobs.map(j => [j.id, j]));
   const stops = r.order.map(id => byId[id]).filter(Boolean).map(j => {
@@ -1099,27 +1107,13 @@ function closePastDays(){
   Object.keys(plans).forEach(d => {
     if (d >= t) return;
     const pl = plans[d];
-    if (pl.route && pl.route.jobs && pl.route.jobs.length){ logQueue = logQueue.filter(e => e.id !== `${d}-${devId}`); logQueue.push(entryFor(d, pl)); }
+    if (pl.route && pl.route.jobs && pl.route.jobs.length){ const e = entryFor(d, pl); logEntries = [e, ...logEntries.filter(x => x.id !== e.id)].sort((a, b) => b.day.localeCompare(a.day)); }
     delete plans[d]; moved = true;
   });
-  if (moved){ storePlans(); storeQueue(); }
+  if (moved){ storePlans(); storeLog(); }
   if (selDay < t && !weekDates().includes(selDay)) selDay = t;
-  sendLog();
 }
-let sendingLog = false;
-async function sendLog(){
-  if (sendingLog || !logQueue.length) return;
-  sendingLog = true;
-  try {
-    while (logQueue.length){
-      const e = logQueue[0];
-      await api("log", {method:"PUT", body:e, timeout:10000});
-      logQueue.shift(); storeQueue();
-      if (logCache){ logCache = [e, ...logCache.filter(x => x.id !== e.id)].sort((a, b) => b.day.localeCompare(a.day)); }
-    }
-  } catch(e){ /* no signal: try again later */ }
-  finally { sendingLog = false; if (!$("log").hidden) drawLog(); if ($("closed-card") && !$("closed-card").hidden) drawClosed(); }
-}
+function sendLog(){}
 // a new day starting while the site is open
 let lastDay = today();
 setInterval(() => {
@@ -1174,24 +1168,11 @@ $("tab-bulk").addEventListener("click", () => showTab("bulk"));
 $("tab-log").addEventListener("click", () => showTab("log"));
 
 /* ============ route log ============ */
-let logCache = null, logLoaded = false, logHasMore = false, logBusy = false;
-async function loadLog(older){
-  if (logBusy) return; logBusy = true;
-  if (!logCache) drawLog();
-  try {
-    const oldest = older && logCache && logCache.length ? logCache[logCache.length - 1].day : "";
-    const {entries} = await api("log?limit=40" + (oldest ? "&before=" + oldest : ""), {timeout:10000});
-    const byId = new Map((older ? logCache || [] : []).map(e => [e.id, e]));
-    (entries || []).forEach(e => byId.set(e.id, e));
-    logCache = [...byId.values()].sort((a, b) => b.day.localeCompare(a.day) || (b.saved || 0) - (a.saved || 0));
-    logHasMore = (entries || []).length >= 40; logLoaded = true;
-  } catch(e){ /* keep whatever we had */ }
-  finally { logBusy = false; drawLog(); if (!$("closed-card").hidden) drawClosed(); }
-}
+function loadLog(){ drawLog(); }
 function logCard(e, open){
   const pct = e.total ? Math.round(e.done / e.total * 100) : 0;
   return `<details class="log-day"${open ? " open" : ""}><summary>
-      <span class="ld-date">${esc(DOW(e.day))}, ${esc(fmtDay(e.day))}${e.pending ? ' <small class="ld-pend">Saving…</small>' : ""}</span>
+      <span class="ld-date">${esc(DOW(e.day))}, ${esc(fmtDay(e.day))}</span>
       <span class="ld-sum${e.done === e.total ? " all" : ""}">${e.done} of ${e.total} done</span>
       <span class="ld-bar" aria-hidden="true"><i style="width:${pct}%"></i></span></summary>
     <ol class="ld-stops">${e.stops.map(st => `<li class="${st.done ? "y" : "n"}"><span class="ld-mark" aria-label="${st.done ? "Done" : "Not done"}">${st.done ? "✓" : "–"}</span>
@@ -1199,12 +1180,10 @@ function logCard(e, open){
   </details>`;
 }
 function drawLog(){
-  const list = $("log-list"), pend = logQueue.map(e => ({...e, pending:true}));
-  const all = [...pend, ...(logCache || []).filter(e => !pend.some(p => p.id === e.id))].sort((a, b) => b.day.localeCompare(a.day));
+  const list = $("log-list"), all = logEntries;
   $("log-count").textContent = all.length ? `${all.length} day${all.length === 1 ? "" : "s"}` : "";
-  $("log-more").hidden = !logHasMore;
   if (!all.length){
-    list.innerHTML = `<div class="empty">${logLoaded ? "No finished days yet.<br>When a day ends, its route is saved here with who was serviced." : logBusy ? "Loading…" : "Couldn't load the log. Check your signal."}</div>`;
+    list.innerHTML = `<div class="empty">No finished days yet.<br>When a day ends, its route is saved here with who was serviced.</div>`;
     return;
   }
   let month = "", html = "";
@@ -1215,7 +1194,6 @@ function drawLog(){
   });
   list.innerHTML = html + "</div>";
 }
-$("log-more").addEventListener("click", () => loadLog(true));
 
 /* ============ address map: the customer book ============ */
 // Add customers one at a time, see them as numbered pins, keep name / notes / schedule / visits for each,
@@ -1265,39 +1243,12 @@ function dueOf(c){
 }
 
 /* ---- saving: this phone first, then the backup ---- */
-function mergeLists(a, b){
-  const byId = new Map();
-  for (const c of [...a, ...b]){ if (!c || !c.id) continue; const cur = byId.get(c.id); if (!cur || (c.mod || 0) > (cur.mod || 0)) byId.set(c.id, c); }
-  return [...byId.values()].sort((x, y) => (x.born || 0) - (y.born || 0));
-}
 function storeLocal(){ try { localStorage.setItem("cbs-cust", JSON.stringify(cust)); localStorage.setItem("cbs-sent", JSON.stringify([...sentIds])); } catch(e){} }
-let dirty = false, syncTimer2 = 0, syncing = false, syncAgain = false, lastSyncOk = null;
-function saveCust(){ storeLocal(); dirty = true; clearTimeout(syncTimer2); syncTimer2 = setTimeout(syncCust, 1200); showSync(); }
-function showSync(){
-  const el = $("bulk-sync"); if (!el) return;
-  el.textContent = !live().length ? "" : dirty || syncing ? "Saving…" : lastSyncOk === false ? "⚠ Not backed up yet. It will retry when you have signal." : lastSyncOk ? "✓ Backed up" : "";
-}
-async function syncCust(){
-  if (syncing){ syncAgain = true; return; }
-  syncing = true; const sending = dirty; dirty = false; showSync();
-  try {
-    const r = sending ? await api("customers", {method:"PUT", body:{list:cust}}) : await api("customers");
-    const remote = r.list || [], before = JSON.stringify(cust);
-    cust = mergeLists(cust, remote);
-    // anything here that the backup doesn't have yet (or has older) still needs sending
-    const rm = new Map(remote.map(c => [c.id, c.mod || 0]));
-    if (cust.some(c => !rm.has(c.id) || (c.mod || 0) > rm.get(c.id))) dirty = true;
-    lastSyncOk = true; storeLocal();
-    if (JSON.stringify(cust) !== before){ renderBulk(false); if (route) showRoute(); }
-  } catch(e){ if (sending) dirty = true; if (!(e instanceof NeedPin)) lastSyncOk = false; }
-  finally {
-    syncing = false; showSync();
-    if (syncAgain || (dirty && lastSyncOk)){ syncAgain = false; clearTimeout(syncTimer2); syncTimer2 = setTimeout(syncCust, 1200); }
-  }
-}
+// customers are saved on this phone only (Download backup keeps a copy as a spreadsheet)
+function saveCust(){ storeLocal(); }
+function showSync(){}
+function syncCust(){}
 let needsRender = false;
-setInterval(() => { if (document.visibilityState === "visible" && !$("app").hidden) syncCust(); }, 60000);
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && !$("app").hidden) syncCust(); });
 
 // load this phone's copy (and move over the older "cbs-bulk" list from before backups)
 try {
@@ -1311,7 +1262,6 @@ try {
       if (c.sent) sentIds.add(c.id);
       delete c.sent; delete c.group; return c;
     });
-    if (cust.length) dirty = true;
   }
 } catch(e){ cust = []; }
 
@@ -1751,12 +1701,12 @@ document.addEventListener("pointerdown", e => { if (suggFor && !e.target.closest
 // and customer changes wait and send themselves when the signal comes back.
 function showOffline(){ $("offline").hidden = navigator.onLine; }
 addEventListener("offline", showOffline);
-addEventListener("online", () => { showOffline(); syncCust(); sendLog(); });
+addEventListener("online", showOffline);
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("/sw.js").catch(() => {});
 function afterSignIn(){
-  renderBulk(false); syncCust();
+  renderBulk(false);
   let t = "planner"; try { t = localStorage.getItem("cbs-tab") || t; } catch(e){}
-  showTab(t); showOffline(); sendLog();
+  showTab(t); showOffline();
 }
 
 /* ============ start up ============ */
