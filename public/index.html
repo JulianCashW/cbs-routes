@@ -59,13 +59,6 @@ input[type=text]:focus,input[type=password]:focus,input[type=search]:focus,input
 .one-row{display:flex;gap:8px}
 .one-row .addr-box{flex:1}
 .one-row .btn-main{width:auto;flex:none;padding:0 22px}
-.paste{margin-top:14px;border-top:1px solid var(--line);padding-top:4px}
-.paste summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:6px;padding:10px 0;font-size:14px;font-weight:600;color:var(--muted);width:max-content;max-width:100%}
-.paste summary::-webkit-details-marker{display:none}
-.paste summary::before{content:"";width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);margin-right:4px;transition:transform .15s}
-.paste[open] summary::before{transform:rotate(45deg)}
-.paste summary:hover{color:var(--ink)}
-.paste[open]{padding-bottom:2px}
 @keyframes flash{from{background:var(--sky)}}
 .b-row.flash{animation:flash 1.6s ease-out}
 .jobs{list-style:none;margin:0;padding:0;display:grid;gap:8px}
@@ -321,7 +314,7 @@ body.sheet-open{overflow:hidden}
     </div>
   </div>
 
-  <!-- Address map: paste lots of addresses, see them as numbered pins, pick some and send them to the route planner -->
+  <!-- Address map: add customers one at a time, see them as numbered pins, pick some and send them to the route planner -->
   <div class="wrap" id="bulk" role="tabpanel" aria-labelledby="tab-bulk" hidden>
     <section class="panel" aria-labelledby="bulk-h">
       <div class="panel-h"><h2 id="bulk-h">Addresses</h2><span class="progress" id="bulk-count"></span></div>
@@ -333,12 +326,6 @@ body.sheet-open{overflow:hidden}
           <button class="btn btn-main" id="one-go" type="button">Add</button>
         </div>
         <div class="status" id="bulk-status" role="status"></div>
-        <details class="paste" id="paste-box">
-          <summary>Paste a whole list instead</summary>
-          <label class="lbl" for="bulk-in">Addresses, one per line</label>
-          <textarea id="bulk-in" rows="6" placeholder="123 Main St, Chesapeake, VA&#10;456 Oak Ave, Norfolk, VA"></textarea>
-          <div class="row-btns"><button class="btn btn-soft" id="bulk-go" type="button">Put on map</button></div>
-        </details>
       </div>
       <div id="bulk-index" hidden>
         <div class="b-tools">
@@ -363,7 +350,7 @@ body.sheet-open{overflow:hidden}
         <button class="btn btn-line" id="bulk-remove" type="button">Remove</button>
         <button class="btn-link" id="bulk-unsel" type="button">Clear</button>
       </div>
-      <div class="map bmap" id="bulk-map" role="region" aria-label="Map of pasted addresses"></div>
+      <div class="map bmap" id="bulk-map" role="region" aria-label="Map of customers"></div>
       <p class="credit">Tap a pin to select it. Addresses by <a href="https://www.geoapify.com/" target="_blank" rel="noopener">Geoapify</a></p>
     </section>
   </div>
@@ -755,10 +742,10 @@ $("tab-planner").addEventListener("click", () => showTab("planner"));
 $("tab-bulk").addEventListener("click", () => showTab("bulk"));
 
 /* ============ address map: the customer book ============ */
-// Paste lots of addresses, see them as numbered pins, keep name / notes / schedule / visits for each,
+// Add customers one at a time, see them as numbered pins, keep name / notes / schedule / visits for each,
 // and send picks to the route planner. Backed up to the site's database and shared by every phone.
 // Each customer: {id, born, mod, text, label, lat, lon, street, name, notes, star, freq, days:[0-6], hist:["YYYY-MM-DD"], bad, del}
-let cust = [], picked = new Set(), sentIds = new Set(), bmap = null, bmarks = [], bulkBusy = false;
+let cust = [], picked = new Set(), sentIds = new Set(), bmap = null, bmarks = [];
 let editing = null, draft = null;
 const DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"], WEEK = [1,2,3,4,5,6,0];
 const FREQS = [[0,"No schedule"],[7,"Every week"],[14,"Every 2 weeks"],[21,"Every 3 weeks"],[28,"Every 4 weeks"],[30,"Every month"]];
@@ -840,36 +827,6 @@ try {
   }
 } catch(e){ cust = []; }
 
-/* ---- adding addresses ---- */
-async function putOnMap(){
-  if (bulkBusy) return;
-  const raw = $("bulk-in").value, have = new Set(live().map(c => c.text.toLowerCase()));
-  const lines = raw.split(/\n+/).map(s => s.trim()).filter(Boolean).filter(s => { const k = s.toLowerCase(); if (have.has(k)) return false; have.add(k); return true; });
-  if (!lines.length){ bstatus(raw.trim() ? "Those addresses are already on the map." : "Paste some addresses first, one per line.", true); return; }
-  if (lines.length > 300){ bstatus("That's more than 300 at once. Paste them in smaller batches.", true); return; }
-  const now = Date.now(), stamp = now.toString(36);
-  const items = lines.map((text, i) => ({id:stamp + "-" + i, born:now + i, mod:now, text}));
-  cust.push(...items);
-  const go = $("bulk-go"); bulkBusy = true; go.disabled = true; go.textContent = `Finding 0 of ${items.length}…`; bstatus("");
-  let n = 0; const queue = [...items];
-  const worker = async () => {
-    while (queue.length){
-      const it = queue.shift();
-      try {
-        const {result} = await api("geocode?text=" + encodeURIComponent(it.text));
-        if (result) Object.assign(it, {lat:result.lat, lon:result.lon, label:result.label, street:result.street || ""});
-      } catch(e){ if (e instanceof NeedPin){ queue.length = 0; return; } }
-      go.textContent = `Finding ${++n} of ${items.length}…`;
-    }
-  };
-  try { await Promise.all([1,2,3,4].map(worker)); }
-  finally { bulkBusy = false; go.disabled = false; go.textContent = "Put on map"; }
-  items.forEach(it => { if (it.lat == null) it.bad = true; touch(it); });
-  $("bulk-in").value = ""; saveCust();
-  const bad = items.filter(i => i.bad).length, good = items.length - bad;
-  bstatus(`Added ${good} to the map.` + (bad ? ` ${bad} couldn't be found.` : ""), false);
-  renderBulk(true);
-}
 function bury(ids){                       // remove, leaving a small marker so other phones remove it too
   const now = Date.now();
   cust = cust.map(c => ids.has(c.id) && !c.del ? {id:c.id, born:c.born, mod:now, del:true} : c);
@@ -1098,7 +1055,6 @@ function readEditor(form){
 }
 
 /* ---- wiring ---- */
-$("bulk-go").addEventListener("click", putOnMap);
 $("bulk-find").addEventListener("input", renderList);
 ["bulk-stars","bulk-due"].forEach(id => $(id).addEventListener("click", () => { const b = $(id); b.setAttribute("aria-pressed", String(!pressed(id))); renderList(); drawBulkMap(true); updatePicks(); }));
 $("bulk-day").addEventListener("change", () => { renderList(); drawBulkMap(true); updatePicks(); });
