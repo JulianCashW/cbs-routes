@@ -3,7 +3,7 @@
 // - Map library and fonts: the saved copy first.
 // - Map tiles: the saved copy first, refreshed in the background; capped so it never fills the phone.
 // - /api/*: never saved here; the page handles no-signal itself.
-const SHELL = "cbs-shell-v1", LIBS = "cbs-libs-v1", TILES = "cbs-tiles-v1", KEEP = [SHELL, LIBS, TILES];
+const SHELL = "cbs-shell-v2", LIBS = "cbs-libs-v1", TILES = "cbs-tiles-v1", KEEP = [SHELL, LIBS, TILES];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(SHELL).then(c => c.add("/")).then(() => self.skipWaiting()));
@@ -49,6 +49,7 @@ self.addEventListener("fetch", e => {
   if (url.origin === location.origin) {
     if (url.pathname.startsWith("/api/")) return;
     if (req.mode === "navigate" || url.pathname === "/" || url.pathname === "/index.html") { e.respondWith(pageFirstFromNetwork(req)); return; }
+    if (url.pathname.startsWith("/icons/") || url.pathname === "/manifest.webmanifest") { e.respondWith(savedFirst(req, SHELL)); return; }
     return;
   }
   if (url.hostname === "unpkg.com" || url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com") { e.respondWith(savedFirst(req, LIBS)); return; }
