@@ -45,6 +45,9 @@ h2{font-family:var(--display);font-weight:700;letter-spacing:-.005em;font-size:2
 .lbl{display:block;font-weight:700;font-size:14px;margin:0 0 6px}
 .field{margin-bottom:18px}
 input[type=text],input[type=password]{width:100%;font-size:16px;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+input[type=text],input[type=password],input[type=search],input[type=date],textarea,select{transition:border-color .15s,box-shadow .15s}
+input[type=text]:focus,input[type=password]:focus,input[type=search]:focus,input[type=date]:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent-edge);box-shadow:0 0 0 3px rgba(165,172,120,.3)}
+::placeholder{color:#a19b90}
 
 /* address boxes + suggestions */
 .addr-box{position:relative;min-width:0}
@@ -71,8 +74,13 @@ input[type=text],input[type=password]{width:100%;font-size:16px;background:var(-
 .btn-line{background:transparent;color:var(--muted);border:1px solid var(--line);padding:10px 14px;font-size:15px}
 .btn-link{appearance:none;border:0;background:transparent;color:var(--muted);font-size:13px;font-weight:600;text-decoration:underline;text-underline-offset:3px;padding:6px 0;cursor:pointer}
 .row-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.row-btns .btn{flex:1 1 auto}
-@media (prefers-reduced-motion: no-preference){.btn{transition:background-color .15s,filter .15s}}
+.row-btns .btn{flex:1 1 0;white-space:nowrap;font-size:14px;padding-inline:12px}
+@media (prefers-reduced-motion: no-preference){
+  .btn,.tab,.b-filter,.b-ic,.b-pin{transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .1s}
+  .btn:active:not(:disabled),.tab:active,.b-filter:active,.b-ic:active{transform:scale(.97)}
+}
+.btn-soft:hover{background:var(--line)}
+.btn-line:hover{background:var(--soft);color:var(--ink)}
 
 .checks{display:grid;gap:10px;margin:0 0 6px}
 .checks label{display:flex;gap:10px;align-items:flex-start;font-size:15px}
@@ -108,25 +116,28 @@ input[type=text],input[type=password]{width:100%;font-size:16px;background:var(-
 .from b{color:var(--ink);font-weight:600}
 .ic{width:18px;height:18px;flex:none}
 .stops{list-style:none;margin:0 0 6px;padding:0}
-.stops > li{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.stops > li{display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px;align-items:start;padding:14px 0;border-top:1px solid var(--line)}
+.stop-body{min-width:0}
+.stop-acts{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}
+.stops > li.home .stop-acts{justify-content:flex-end}
 .stops > li:first-child{border-top:0}
 .num{width:34px;height:34px;border-radius:50%;background:var(--accent);color:var(--on-accent);font-family:var(--display);font-weight:700;font-size:16px;display:grid;place-items:center}
 .home-ic{width:34px;height:34px;display:grid;place-items:center;color:var(--muted)}
 .addr{font-weight:600;overflow-wrap:anywhere}
 .sub{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
-.done-box{display:inline-flex;align-items:center;gap:8px;margin-top:6px;font-size:14px;font-weight:700;color:var(--muted);cursor:pointer}
+.done-box{display:inline-flex;align-items:center;gap:8px;min-height:40px;font-size:14px;font-weight:700;color:var(--muted);cursor:pointer}
 .done-box input{width:22px;height:22px;margin:0;accent-color:var(--olive-ink)}
-.stops > li.isdone{background:var(--soft);border-radius:10px;padding-inline:10px;margin-inline:-10px}
+.stops > li.isdone{background:var(--soft);border-radius:12px;padding-inline:12px;margin-inline:-12px;border-top-color:transparent}
+.stops > li.isdone + li{border-top-color:transparent}
 .stops > li.isdone .addr{text-decoration:line-through;color:var(--muted)}
 .stops > li.isdone .done-box{color:var(--ink)}
 .stops > li.isdone .navs{opacity:.4;pointer-events:none}
-.navs{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
-.nav{background:var(--sky);color:var(--on-sky);padding:9px 18px;font-size:14px;border-radius:10px}
+.navs{display:flex;flex:none}
+.nav{background:var(--sky);color:var(--on-sky);border:1px solid var(--accent-edge);padding:9px 18px;font-size:14px;border-radius:999px;min-height:40px}
+.nav .ic{width:15px;height:15px}
+.nav:hover{background:var(--accent)}
 .missed{font-size:14px;font-weight:600;margin:8px 0 0}
 @media (max-width:560px){
-  .stops > li{grid-template-columns:34px minmax(0,1fr);align-items:start}
-  .stops > li > .navs{grid-column:2;justify-content:flex-start}
-  .stops > li > .navs .nav{flex:1}
 }
 .empty{color:var(--muted);text-align:center;padding:36px 10px}
 .empty svg{display:block;margin:0 auto 10px;width:72px;height:72px}
@@ -136,27 +147,35 @@ select{appearance:none;-webkit-appearance:none;font:inherit;font-size:16px;color
   background-repeat:no-repeat;background-size:16px 16px;background-position:right 14px center;
   border:1px solid var(--line);border-radius:10px;padding:10px 40px 10px 12px;cursor:pointer;line-height:1.3}
 select:hover{border-color:var(--accent-edge)}
-select:focus-visible{outline:3px solid var(--accent-edge);outline-offset:2px}
 input[type=date]{appearance:none;-webkit-appearance:none;cursor:pointer}
 input[type=date]::-webkit-calendar-picker-indicator{opacity:.55;cursor:pointer}
 
 /* tabs */
 main .tabs-wrap{display:block;padding-block:18px 0}
-.tabs{display:flex;gap:6px;flex-wrap:wrap}
-.tab{appearance:none;border:1px solid var(--line);background:transparent;color:var(--muted);font-weight:600;font-size:15px;padding:9px 18px;border-radius:999px;cursor:pointer}
-.tab:hover{background:var(--soft);color:var(--ink)}
-.tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent-edge);color:var(--on-accent)}
+.tabs{display:inline-flex;gap:2px;padding:4px;background:var(--soft);border:1px solid var(--line);border-radius:999px;max-width:100%}
+.tab{appearance:none;border:0;background:transparent;color:var(--muted);font-weight:600;font-size:15px;padding:8px 18px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{background:var(--accent);color:var(--on-accent);box-shadow:0 1px 2px rgba(35,38,26,.12)}
 
 /* address map */
 textarea{width:100%;min-height:150px;font:inherit;font-size:16px;line-height:1.45;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:10px 12px;resize:vertical}
 .bmap{height:460px}
+@media (min-width:821px){.bulk-mapp{position:sticky;top:16px}}   /* desktop: the map stays in view while the list scrolls */
 @media (max-width:820px){.bmap{height:360px} #bulk.has-pins .bulk-mapp{order:-1}}  /* phones: map on top once it has pins */
-.selbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:10px;margin:0 0 12px}
-.selbar b{font-size:14px;margin-right:auto;padding-left:4px}
-.selbar .btn-main{width:auto;min-height:40px;padding:8px 16px}
-.selbar .btn-line{padding:8px 12px;font-size:14px}
+.selbar{position:fixed;z-index:40;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));width:min(560px,calc(100% - 24px));
+  display:flex;align-items:center;gap:6px;background:var(--deep);color:var(--on-deep);border-radius:16px;padding:8px 8px 8px 16px;box-shadow:0 14px 36px rgba(34,32,29,.3)}
+.selbar b{font-size:14px;margin-right:auto;white-space:nowrap}
+.selbar #bulk-unsel{order:1;color:rgba(250,248,243,.75);padding:8px 6px}
+.selbar #bulk-remove{order:2;background:transparent;color:var(--on-deep);border:1px solid rgba(250,248,243,.28);padding:8px 12px;font-size:14px;min-height:40px}
+.selbar #bulk-remove:hover{background:rgba(250,248,243,.1)}
+.selbar #bulk-addsel{order:3;width:auto;min-height:40px;padding:8px 16px;white-space:nowrap}
+@media (prefers-reduced-motion: no-preference){.selbar:not([hidden]){animation:rise .18s ease-out}}
+@keyframes rise{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
+body.has-selbar .site-foot{padding-bottom:96px}
 .b-tools{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin:0 0 8px}
-.b-tools input{flex:1 1 220px;min-width:0;font-size:16px;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+.b-tools input{flex:1 1 100%;min-width:0;font-size:16px;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+.b-lhead{display:flex;justify-content:space-between;align-items:baseline;margin:4px 2px 6px;font-size:13px;font-weight:600;color:var(--muted)}
+.b-lhead .btn-link{padding:2px 0}
 .b-list{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:12px;background:var(--field);max-height:520px;overflow:auto}
 .b-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 10px;border-top:1px solid var(--line);font-size:14px}
 .b-row:first-child{border-top:0}
@@ -306,8 +325,8 @@ body.sheet-open{overflow:hidden}
           <button class="b-filter" id="bulk-stars" type="button" aria-pressed="false">★ Premium</button>
           <button class="b-filter" id="bulk-due" type="button" aria-pressed="false">Due</button>
           <select id="bulk-day" aria-label="Service day"><option value="">Any day</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option></select>
-          <button class="btn-link" id="bulk-all" type="button">Select all</button>
         </div>
+        <div class="b-lhead"><span id="bulk-shown"></span><button class="btn-link" id="bulk-all" type="button">Select all</button></div>
         <ol class="b-list" id="bulk-list" aria-label="Address index"></ol>
         <div id="bulk-bad"></div>
         <p class="b-sync" id="bulk-sync" aria-live="polite"></p>
@@ -321,7 +340,7 @@ body.sheet-open{overflow:hidden}
         <b id="bulk-sel-n"></b>
         <button class="btn btn-main" id="bulk-addsel" type="button">Add to route</button>
         <button class="btn btn-line" id="bulk-remove" type="button">Remove</button>
-        <button class="btn-link" id="bulk-unsel" type="button">Clear selection</button>
+        <button class="btn-link" id="bulk-unsel" type="button">Clear</button>
       </div>
       <div class="map bmap" id="bulk-map" role="region" aria-label="Map of pasted addresses"></div>
       <p class="credit">Tap a pin to select it. Addresses by <a href="https://www.geoapify.com/" target="_blank" rel="noopener">Geoapify</a></p>
@@ -429,7 +448,7 @@ const noteFor = inp => inp.id === "start" ? $("start-note") : inp.closest("li").
 function showNote(inp, state){
   const el = noteFor(inp);
   el.className = "note" + (state === "bad" ? " warn" : "");
-  el.textContent = {bad:"⚠ Not found", busy:"Checking address…", error:"Couldn't check yet"}[state] || "";
+  el.textContent = {bad:"⚠ Not found", error:"Couldn't check yet"}[state] || "";   // checking happens quietly
 }
 
 // suggestions dropdown, shared by every box
@@ -614,7 +633,7 @@ function showRoute(){
       : `Open part ${part} in Google Maps · ${a === 0 ? "start" : "stop " + a} to ${last >= places.length-1 && endsHome ? "HQ" : "stop " + last}`;
     links += `<a class="btn btn-main" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/${chunk.map(encodeURIComponent).join("/")}">${label}${OUT}</a>`;
   }
-  const waze = (p, name) => `<div class="navs"><a class="btn nav" target="_blank" rel="noopener" aria-label="Drive to ${esc(name)} with Waze" href="https://waze.com/ul?ll=${p.lat},${p.lon}&navigate=yes">Waze</a></div>`;
+  const waze = (p, name) => `<div class="navs"><a class="btn nav" target="_blank" rel="noopener" aria-label="Drive to ${esc(name)} with Waze" href="https://waze.com/ul?ll=${p.lat},${p.lon}&navigate=yes"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l18-8-8 18-2-8z"/></svg>Waze</a></div>`;
   const row = (cls, attrs, name, note) => `<li class="${cls}"${attrs}><span class="rail"><i></i></span><b>${name}</b><small>${note}</small></li>`;
 
   $("out").innerHTML =
@@ -625,9 +644,9 @@ function showRoute(){
      <ol class="glance" aria-label="Route by street">${row("g-home","","HQ","Start")}${stops.map((j, i) => row("", ` data-id="${esc(j.id)}"`, esc(streetOf(j)) + (findC(j.cust)?.star ? ' <span class="star-tag" aria-label="Premium">★</span>' : ""), "Stop " + (i+1))).join("")}${endsHome ? row("g-home","","HQ","End") : ""}</ol>
      <p class="from">${HOUSE}<span>Leaving from <b>${esc(route.start.label)}</b></span></p>
      <ol class="stops">${stops.map((j, i) =>
-        `<li data-id="${esc(j.id)}"${findC(j.cust)?.star ? ' class="prem"' : ""}><div class="num">${i+1}</div><div>${stopText(j)}` +
-        `<label class="done-box"><input type="checkbox" id="done-${i+1}" data-id="${esc(j.id)}"> Job done</label></div>${waze(j, "stop " + (i+1))}</li>`).join("")}
-       ${endsHome ? `<li><div class="home-ic">${HOUSE}</div><div><div class="addr">Head back to HQ</div><div class="sub">${esc(route.start.label)}</div></div>${waze(route.start, "HQ")}</li>` : ""}
+        `<li data-id="${esc(j.id)}"${findC(j.cust)?.star ? ' class="prem"' : ""}><div class="num">${i+1}</div><div class="stop-body">${stopText(j)}` +
+        `<div class="stop-acts"><label class="done-box"><input type="checkbox" id="done-${i+1}" data-id="${esc(j.id)}"> Job done</label>${waze(j, "stop " + (i+1))}</div></div></li>`).join("")}
+       ${endsHome ? `<li class="home"><div class="home-ic">${HOUSE}</div><div class="stop-body"><div class="addr">Head back to HQ</div><div class="sub">${esc(route.start.label)}</div><div class="stop-acts">${waze(route.start, "HQ")}</div></div></li>` : ""}
      </ol>
      ${route.missed && route.missed.length ? `<p class="missed">⚠ ${route.missed.length} stop${route.missed.length > 1 ? "s" : ""} couldn't be reached by road and ${route.missed.length > 1 ? "were" : "was"} left off. Check ${route.missed.length > 1 ? "those addresses" : "that address"}.</p>` : ""}`;
 
@@ -709,6 +728,7 @@ function showTab(t){
   try { localStorage.setItem("cbs-tab", t); } catch(e){}
   if (t === "bulk"){ if (bmap) bmap.resize(); else drawBulkMap(true); }
   else if (map) map.resize();
+  updatePicks();
 }
 $("tab-planner").addEventListener("click", () => showTab("planner"));
 $("tab-bulk").addEventListener("click", () => showTab("bulk"));
@@ -856,6 +876,7 @@ function renderList(){
   list.innerHTML = shown.length ? shown.map(({c, n}) => row(c, n)).join("")
     : `<li class="b-empty">${!ok.length ? "None of these were found yet." : "No customers match these filters."}</li>`;
   list.scrollTop = keep;
+  $("bulk-shown").textContent = shown.length === ok.length ? `${ok.length} customer${ok.length === 1 ? "" : "s"}` : `Showing ${shown.length} of ${ok.length}`;
   $("bulk-bad").innerHTML = bad.length ? `<div class="b-bad"><div class="b-bad-h"><b>⚠ Not found (${bad.length})</b><button class="btn-link" type="button" id="bulk-dropbad">Remove these</button></div>` +
     `<ul>${bad.map(c => `<li>${esc(c.text)}</li>`).join("")}</ul></div>` : "";
   updatePicks(); showSync();
@@ -930,7 +951,8 @@ function togglePick(id){ picked.has(id) ? picked.delete(id) : picked.add(id); up
 function updatePicks(){
   $("bulk-list").querySelectorAll(".b-row[data-id]").forEach(li => { const on = picked.has(li.dataset.id); li.classList.toggle("on", on); li.querySelector("input[data-id]").checked = on; });
   bmarks.forEach(m => m.el && m.el.classList.toggle("sel", picked.has(m.id)));
-  $("bulk-sel").hidden = !picked.size;
+  $("bulk-sel").hidden = !picked.size || $("bulk").hidden;
+  document.body.classList.toggle("has-selbar", !$("bulk-sel").hidden);
   $("bulk-sel-n").textContent = `${picked.size} selected`;
 }
 
