@@ -314,7 +314,9 @@ body.sheet-open{overflow:hidden}
 .b-note{font-size:12.5px;color:var(--muted);font-style:italic;margin-top:2px;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
 .b-foot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 16px;margin-top:14px;font-size:13px;color:var(--muted)}
-.b-foot-links{display:flex;gap:18px;margin-left:auto}
+.b-foot-links{display:flex;align-items:center;gap:16px;margin-left:auto}
+.b-clear{color:var(--ink);font-size:14px;font-weight:700;padding:7px 16px;border-radius:999px;border-color:var(--muted)}
+.b-clear:hover{background:var(--soft);border-color:var(--ink)}
 .b-sync{font-size:13px;color:var(--muted)}
 .star-tag{color:var(--gold)}
 .stop-note{font-size:13px;color:var(--muted);font-style:italic;margin-top:2px;overflow-wrap:anywhere}
@@ -424,7 +426,7 @@ body.sheet-open{overflow:hidden}
         <div id="bulk-bad"></div>
         <div class="b-foot">
           <span class="b-sync" id="bulk-sync" aria-live="polite"></span>
-          <span class="b-foot-links"><button class="btn-link" id="bulk-export" type="button">Download backup</button><button class="btn-link" id="bulk-clear" type="button">Clear list</button></span>
+          <span class="b-foot-links"><button class="btn-link" id="bulk-export" type="button">Download backup</button><button class="btn btn-line b-clear" id="bulk-clear" type="button">Clear list</button></span>
         </div>
       </div>
     </section>
