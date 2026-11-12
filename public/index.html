@@ -269,6 +269,20 @@ textarea{width:100%;min-height:150px;font:inherit;font-size:16px;line-height:1.4
 @media (prefers-reduced-motion: no-preference){.selbar:not([hidden]){animation:rise .18s ease-out}}
 @keyframes rise{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
 body.has-selbar .site-foot{padding-bottom:96px}
+.selbar .dp{display:none}
+.selbar.picking{display:block;padding:12px}
+.selbar.picking > :not(.dp){display:none}
+.selbar.picking .dp{display:grid;gap:10px}
+.dp-h{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:14px;padding:0 2px}
+.dp-h .btn-link{color:var(--od75);padding:4px 0}
+.dp-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.dp-day{appearance:none;display:flex;flex-direction:column;align-items:center;gap:1px;padding:8px 0;border-radius:10px;border:1px solid var(--od28);background:var(--od10);color:var(--bar-fg);cursor:pointer;font:inherit}
+.dp-day span{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;opacity:.8}
+.dp-day b{font-family:var(--display);font-size:17px;line-height:1.1;margin:0}
+.dp-h b{margin:0}
+.dp-day.today{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.dp-day:not(:disabled):hover,.dp-day:not(:disabled):focus-visible{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.dp-day:disabled{opacity:.3;cursor:not-allowed}
 /* phones: count + Clear on top, Remove + Add to route underneath, so nothing runs off the screen */
 @media (max-width:520px){
   .selbar{display:grid;grid-template-columns:1fr 1.5fr;grid-template-areas:"n c" "r a";gap:8px 8px;padding:10px 10px 10px 14px}
@@ -296,6 +310,7 @@ body.has-selbar .site-foot{padding-bottom:96px}
 .b-tools input{width:100%;min-width:0;font-size:16px;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
 .b-lhead{display:flex;justify-content:space-between;align-items:baseline;margin:0 2px 8px;font-size:13px;font-weight:600;color:var(--muted)}
 .b-lhead .btn-link{padding:2px 0}
+.b-lh-acts{display:flex;gap:14px}
 .b-list{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:14px;background:var(--field);overflow:hidden}
 .b-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:12px 12px;border-top:1px solid var(--line);font-size:14px}
 .b-row:first-child{border-top:0}
@@ -504,7 +519,7 @@ body.sheet-open{overflow:hidden}
             <button class="b-filter" id="bulk-paused" type="button" aria-pressed="false" hidden>Paused</button>
           </div>
         </div>
-        <div class="b-lhead"><span id="bulk-shown"></span><button class="btn-link" id="bulk-all" type="button">Select all</button></div>
+        <div class="b-lhead"><span id="bulk-shown"></span><span class="b-lh-acts"><button class="btn-link" id="bulk-unhide" type="button" hidden></button><button class="btn-link" id="bulk-all" type="button">Select all</button></span></div>
         <ol class="b-list" id="bulk-list" aria-label="Address index"></ol>
         <div id="bulk-bad"></div>
         <div class="b-foot">
@@ -520,6 +535,10 @@ body.sheet-open{overflow:hidden}
         <button class="btn btn-main" id="bulk-addsel" type="button">Add to route</button>
         <button class="btn btn-line" id="bulk-remove" type="button">Remove</button>
         <button class="btn-link" id="bulk-unsel" type="button">Clear</button>
+        <div class="dp" id="daypick">
+          <div class="dp-h"><span>Add <b id="dp-n"></b> to which day?</span><button class="btn-link" id="dp-cancel" type="button">Cancel</button></div>
+          <div class="dp-days" id="dp-days" role="group" aria-label="Day of the week"></div>
+        </div>
       </div>
       <div class="bmap-wrap">
         <div class="map bmap" id="bulk-map" role="region" aria-label="Map of customers"></div>
@@ -1335,6 +1354,8 @@ function renderList(){
   const paused = ok.filter(c => c.paused).length, active = ok.length - paused;
   $("bulk-paused").hidden = !paused && !pressed("bulk-paused");
   if (!paused && pressed("bulk-paused")){ $("bulk-paused").setAttribute("aria-pressed", "false"); $("bulk-paused").hidden = true; }
+  const hiddenN = live().filter(c => c.hidden && !c.del).length;
+  $("bulk-unhide").hidden = !hiddenN; $("bulk-unhide").textContent = `Unhide all (${hiddenN})`;
   $("bulk-shown").textContent = pressed("bulk-paused") ? `${shown.length} paused` :
     (shown.length === active ? `${active} customer${active === 1 ? "" : "s"}` : `Showing ${shown.length} of ${active}`) + (paused ? ` · ${paused} paused` : "");
   $("bulk-bad").innerHTML = bad.length ? `<div class="b-bad"><div class="b-bad-h"><b>⚠ Not found (${bad.length})</b><button class="btn-link" type="button" id="bulk-dropbad">Remove these</button></div>` +
@@ -1460,6 +1481,7 @@ function updatePicks(){
   $("bulk-list").querySelectorAll(".b-row[data-id]").forEach(li => { const on = picked.has(li.dataset.id); li.classList.toggle("on", on); li.querySelector("input[data-id]").checked = on; });
   bmarks.forEach(m => m.el && m.el.classList.toggle("sel", picked.has(m.id)));
   $("bulk-sel").hidden = !picked.size || $("bulk").hidden;
+  if ($("bulk-sel").hidden) $("bulk-sel").classList.remove("picking");
   document.body.classList.toggle("has-selbar", !$("bulk-sel").hidden);
   $("bulk-sel-n").textContent = `${picked.size} selected`;
 }
@@ -1472,12 +1494,13 @@ function addToRoute(ids){
   let added = 0;
   items.forEach(c => {
     const label = nameOf(c); sentIds.add(c.id);
+    if (!c.hidden){ c.hidden = true; touch(c); }          // on a route now, so off the map
     if (taken.has(label.toLowerCase())) return;
     const inp = empties.shift() || addRow();
     inp.value = label; setPlace(inp, {lat:c.lat, lon:c.lon, street:c.street || "", label, cust:c.id}); showNote(inp, "");
     taken.add(label.toLowerCase()); added++;
   });
-  picked.clear(); syncRows(); saveDraft(); storeLocal(); renderBulk(false);
+  picked.clear(); syncRows(); saveDraft(); saveCust(); renderBulk(false);
   showTab("planner"); markStale();
   status(added ? `Added ${added} customer${added > 1 ? "s" : ""} to ${selDay === today() ? "today's" : DOW(selDay) + "'s"} jobs. Tap Plan route.` : "Those addresses are already in this day's job list.");
 }
@@ -1535,8 +1558,31 @@ $("bulk-find").addEventListener("input", renderList);
 ["bulk-stars","bulk-due","bulk-paused"].forEach(id => $(id).addEventListener("click", () => { const b = $(id); b.setAttribute("aria-pressed", String(!pressed(id))); renderList(); drawBulkMap(true); updatePicks(); }));
 $("bulk-day").addEventListener("change", () => { renderList(); drawBulkMap(true); updatePicks(); });
 $("bulk-all").addEventListener("click", () => { $("bulk-list").querySelectorAll(".b-row[data-id]:not(.sent)").forEach(li => picked.add(li.dataset.id)); updatePicks(); });
-$("bulk-addsel").addEventListener("click", () => addToRoute([...picked]));
+// Add to route: pick the day first (today or later this week)
+$("bulk-addsel").addEventListener("click", () => {
+  const t = today();
+  $("dp-n").textContent = `${picked.size} customer${picked.size === 1 ? "" : "s"}`;
+  $("dp-days").innerHTML = weekDates().map(d => `<button class="dp-day${d === t ? " today" : ""}" type="button" data-day="${d}"${d < t ? " disabled" : ""}
+      aria-label="${DOW(d)}${d === t ? ", today" : ""}${d < t ? ", closed" : ""}"><span>${dayObj(d).toLocaleDateString("en-US", {weekday:"short"})}</span><b>${dayObj(d).getDate()}</b></button>`).join("");
+  hideToast(); $("bulk-sel").classList.add("picking");
+  const first = $("dp-days").querySelector(".dp-day:not(:disabled)"); if (first) first.focus();
+});
+$("dp-cancel").addEventListener("click", () => $("bulk-sel").classList.remove("picking"));
+$("dp-days").addEventListener("click", e => {
+  const b = e.target.closest("[data-day]"); if (!b || b.disabled) return;
+  const ids = [...picked]; $("bulk-sel").classList.remove("picking");
+  if (b.dataset.day !== selDay) selectDay(b.dataset.day);
+  addToRoute(ids);
+});
 $("bulk-unsel").addEventListener("click", () => { picked.clear(); updatePicks(); });
+$("bulk-unhide").addEventListener("click", () => {
+  const was = live().filter(c => c.hidden).map(c => c.id);
+  was.forEach(id => { const c = findC(id); delete c.hidden; touch(c); });
+  saveCust(); renderBulk(false);
+  toast(`Showing ${was.length} hidden customer${was.length === 1 ? "" : "s"} again`, () => {
+    was.forEach(id => { const c = findC(id); if (c){ c.hidden = true; touch(c); } }); saveCust(); renderBulk(false);
+  });
+});
 $("bulk-remove").addEventListener("click", () => bury(new Set(picked)));
 $("bulk-list").addEventListener("change", e => { const c = e.target.closest("input[data-id]"); if (c) togglePick(c.dataset.id); });
 const sheet = $("cust-sheet");
