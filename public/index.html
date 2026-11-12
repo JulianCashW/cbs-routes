@@ -119,7 +119,21 @@ input[type=text]:focus,input[type=password]:focus,input[type=search]:focus,input
 .btn-soft:hover{background:var(--line)}
 .btn-line:hover{background:var(--soft);color:var(--ink)}
 
-.checks{display:grid;gap:10px;margin:0 0 6px}
+.checks{display:grid;gap:10px;margin:0}
+.setup{margin:0 0 18px;border:1px solid var(--line);border-radius:12px;background:var(--field)}
+.setup summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;font-size:14px}
+.setup summary::-webkit-details-marker{display:none}
+.setup-sum{color:var(--muted);font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.setup-change{flex:none;font-weight:700;color:var(--olive-ink);font-size:13px}
+.setup[open] .setup-change{color:var(--muted)}
+.setup[open] .setup-change{font-size:0}
+.setup[open] .setup-change::after{content:"Done";font-size:13px}
+.setup[open] summary{border-bottom:1px solid var(--line)}
+.setup-body{padding:14px}
+.setup-body .field{margin-bottom:14px}
+.lbl-row{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 6px}
+.lbl-row .lbl{margin:0}
+.lbl-row .btn-link{padding:2px 0}
 .checks label{display:flex;gap:10px;align-items:flex-start;font-size:15px}
 .checks input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--olive-ink);flex:none}
 .plan-bar{margin-top:14px}
@@ -304,8 +318,14 @@ body.has-selbar .site-foot{padding-bottom:96px}
 .one-field{margin-bottom:26px}
 .b-first{margin:14px 0 0;padding:12px 14px;border-radius:12px;background:var(--soft);color:var(--muted);font-size:14px;line-height:1.45}
 .b-tools{display:grid;gap:10px;margin:0 0 14px}
-.b-find-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
-.b-find-row select{width:128px;height:auto;border-radius:10px;font-size:15px;color:var(--ink);background-color:var(--field);padding:0 36px 0 12px}
+.b-find-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:stretch}
+.b-find-row .b-filter{border-radius:10px}
+.b-more-btn{display:inline-flex;align-items:center;gap:6px}
+.b-more-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+.b-more-btn[aria-expanded="true"]{background:var(--soft);color:var(--ink)}
+.b-more-btn.active{background:var(--sky);border-color:var(--accent-edge);color:var(--ink)}
+.b-morebox{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--soft)}
+.b-morebox select{font-size:14px;font-weight:600;padding:8px 36px 8px 12px;border-radius:999px;min-height:0}
 .b-chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -2px;padding:2px}
 .b-chips::-webkit-scrollbar{display:none}
 .b-chips > *{flex:none}
@@ -316,7 +336,16 @@ body.has-selbar .site-foot{padding-bottom:96px}
 .b-list{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:14px;background:var(--field);overflow:hidden}
 .b-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:12px 12px;border-top:1px solid var(--line);font-size:14px}
 .b-row:first-child{border-top:0}
-.b-row .b-text{display:flex;flex-direction:column;justify-content:center;flex:1;min-width:0;min-height:34px;cursor:pointer;line-height:1.3}
+.b-row .b-text{appearance:none;border:0;background:none;padding:0;margin:0;font:inherit;color:inherit;text-align:left;display:flex;flex-direction:column;justify-content:center;flex:1;min-width:0;min-height:34px;cursor:pointer;line-height:1.3}
+.b-row .b-text:hover .b-name{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--line)}
+.b-sub{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;cursor:pointer}
+.b-badge{font-size:12px;line-height:1;padding:5px 9px;border-radius:999px;white-space:nowrap}
+.b-badge.b-due{font-weight:700;color:#fff;background:#d08a1e}
+.b-badge.b-due.late{background:#b94a1c}
+.b-badge.b-soon{font-weight:700;color:#5a4405;background:#f7e4a6;border:1px solid #e8c24c}
+.b-badge.b-paused{font-weight:700;color:var(--muted);background:var(--soft);border:1px dashed var(--muted)}
+.b-detail{font-size:12.5px;color:var(--muted);font-weight:600;line-height:1.35}
+.b-sub .b-note{flex:1 1 100%;margin-top:0}
 .b-row input[type=checkbox]{width:20px;height:20px;margin:0;flex:none;accent-color:var(--olive-ink)}
 .b-num{appearance:none;border:0;cursor:pointer;flex:none;min-width:26px;height:22px;padding:0 6px;border-radius:11px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font:700 11px var(--display);font-variant-numeric:tabular-nums}
 .b-addr{overflow-wrap:anywhere}
@@ -369,6 +398,13 @@ body.sheet-open{overflow:hidden}
 .b-visit{display:inline-flex;align-items:center;gap:2px;background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:2px 2px 2px 10px;font-size:13px;font-weight:600}
 .b-visit button{appearance:none;border:0;background:transparent;color:var(--muted);width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:16px;line-height:1}
 .b-visit button:hover{background:var(--line);color:var(--ink)}
+.b-vbox{border:1px solid var(--line);border-radius:12px;background:var(--field)}
+.b-vbox summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;font-size:14px}
+.b-vbox summary::-webkit-details-marker{display:none}
+.b-vbox summary span{color:var(--muted);font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:8px}
+.b-vbox summary span::after{content:"";width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin-top:-3px;transition:transform .15s}
+.b-vbox[open] summary span::after{transform:rotate(-135deg);margin-top:3px}
+.b-vbody{padding:0 14px 14px}
 .b-hint{margin:0 0 8px;font-size:13px;font-weight:400;color:var(--muted)}
 .b-addvisit{display:flex;gap:8px;align-items:stretch}
 .b-addvisit .btn{flex:none;white-space:nowrap}
@@ -491,7 +527,7 @@ body.sheet-open{overflow:hidden}
   <div class="wrap tabs-wrap">
     <div class="tabs" role="tablist" aria-label="Tools">
       <button class="tab" role="tab" id="tab-planner" aria-controls="planner" aria-selected="true" type="button">Route planner</button>
-      <button class="tab" role="tab" id="tab-bulk" aria-controls="bulk" aria-selected="false" type="button">Address map</button>
+      <button class="tab" role="tab" id="tab-bulk" aria-controls="bulk" aria-selected="false" type="button">Customers</button>
       <button class="tab" role="tab" id="tab-log" aria-controls="log" aria-selected="false" type="button">Log</button>
     </div>
   </div>
@@ -513,13 +549,15 @@ body.sheet-open{overflow:hidden}
       <div id="bulk-index" hidden>
         <div class="b-tools">
           <div class="b-find-row">
-          <input type="search" id="bulk-find" placeholder="Search customers" aria-label="Search names, addresses or notes" autocomplete="off">
-          <select id="bulk-day" aria-label="Service day"><option value="">Any day</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option></select>
-          </div>
-          <div class="b-chips" role="group" aria-label="Filters">
-            <button class="b-filter" id="bulk-stars" type="button" aria-pressed="false">★ Premium</button>
+            <input type="search" id="bulk-find" placeholder="Search" aria-label="Search names, addresses or notes" autocomplete="off">
             <button class="b-filter" id="bulk-due" type="button" aria-pressed="false">Due</button>
+            <button class="b-filter b-more-btn" id="bulk-more" type="button" aria-expanded="false" aria-controls="bulk-morebox">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span id="bulk-more-t">Filter</span></button>
+          </div>
+          <div class="b-morebox" id="bulk-morebox" hidden>
+            <button class="b-filter" id="bulk-stars" type="button" aria-pressed="false">★ Premium only</button>
             <button class="b-filter" id="bulk-paused" type="button" aria-pressed="false" hidden>Paused</button>
+            <select id="bulk-day" aria-label="Service day"><option value="">Any day</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option></select>
           </div>
         </div>
         <div class="b-lhead"><span id="bulk-shown"></span><span class="b-lh-acts"><button class="btn-link" id="bulk-unhide" type="button" hidden></button><button class="btn-link" id="bulk-all" type="button">Select all</button></span></div>
@@ -550,7 +588,7 @@ body.sheet-open{overflow:hidden}
         </button>
         <div class="area-layer" id="area-layer" hidden><div class="area-box" id="area-box" hidden></div><p class="area-hint">Drag across the pins you want</p></div>
       </div>
-      <div class="map-key" aria-label="Pin colors">
+      <div class="map-key" id="map-key" aria-label="Pin colors" hidden>
         <span><i class="k-ok"></i>Done</span><span><i class="k-soon"></i>Upcoming</span><span><i class="k-due"></i>Due</span><span><i class="k-late"></i>Overdue</span><span><i class="k-star"></i>Premium</span>
       </div>
       <p class="credit">Tap a pin to select it · Addresses by <a href="https://www.geoapify.com/" target="_blank" rel="noopener">Geoapify</a></p>
@@ -563,26 +601,26 @@ body.sheet-open{overflow:hidden}
     <section class="panel" aria-labelledby="in-h">
       <div class="panel-h"><h2 id="in-h">Today's jobs</h2></div>
 
-      <div class="field">
-        <label class="lbl" for="start">Start of the day</label>
-        <div class="addr-box">
-          <input type="text" id="start" autocomplete="off" placeholder="HQ address" role="combobox" aria-autocomplete="list" aria-expanded="false">
+      <details class="setup" id="setup">
+        <summary><span class="setup-sum" id="setup-sum">From HQ</span><span class="setup-change">Change</span></summary>
+        <div class="setup-body">
+          <div class="field">
+            <label class="lbl" for="start">Start of the day</label>
+            <div class="addr-box">
+              <input type="text" id="start" autocomplete="off" placeholder="HQ address" role="combobox" aria-autocomplete="list" aria-expanded="false">
+            </div>
+            <div class="note" id="start-note" aria-live="polite"></div>
+          </div>
+          <div class="checks">
+            <label><input type="checkbox" id="home" checked> End the day back at HQ</label>
+            <label><input type="checkbox" id="tolls" checked> Avoid toll roads</label>
+          </div>
         </div>
-        <div class="note" id="start-note" aria-live="polite"></div>
-      </div>
+      </details>
 
       <div class="field">
-        <span class="lbl" id="jobs-l">Job addresses</span>
+        <div class="lbl-row"><span class="lbl" id="jobs-l">Stops</span><button class="btn-link" id="clear" type="button">Clear all</button></div>
         <ol class="jobs" id="jobs" aria-labelledby="jobs-l"></ol>
-        <div class="row-btns">
-          <button class="btn btn-soft" id="add" type="button">+ Add another job box</button>
-          <button class="btn btn-line" id="clear" type="button">Clear all jobs</button>
-        </div>
-      </div>
-
-      <div class="checks">
-        <label><input type="checkbox" id="home" checked> End the day back at HQ</label>
-        <label><input type="checkbox" id="tolls" checked> Avoid toll roads</label>
       </div>
 
       <div class="plan-bar">
@@ -624,7 +662,6 @@ body.sheet-open{overflow:hidden}
 
 /* ============ settings ============ */
 const DEFAULT_START = "4311 Manchester Lane, Chesapeake, VA";
-const BASE_BOXES = 10;
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/positron";
 
 /* ============ helpers ============ */
@@ -742,6 +779,7 @@ function wireBox(inp){
   inp.addEventListener("input", () => {
     setPlace(inp, null); showNote(inp, "");
     inp.closest("li")?.classList.toggle("filled", !!inp.value.trim());
+    if (inp.id !== "start" && inp.value.trim() && inp.closest("li") === $("jobs").lastElementChild){ addRow(); syncRows(); }
     refreshPlanButton(); markStale(); saveDraft();
     if (inp.value.trim().length < 3){ closeSugg(); return; }
     suggestInto(suggSt, inp.value, (items, msg) => {
@@ -763,7 +801,10 @@ function wireBox(inp){
       next.focus();
     }
   });
-  inp.addEventListener("blur", () => { setTimeout(() => { if (suggFor === inp) closeSugg(); }, 120); if (inp.value.trim() && !placeOf(inp)) checkBox(inp); });
+  inp.addEventListener("blur", () => {
+    setTimeout(() => { if (suggFor === inp) closeSugg(); if (inp.id !== "start" && !inp.value.trim() && inp.isConnected){ syncRows(); saveDraft(); } }, 160);
+    if (inp.value.trim() && !placeOf(inp)) checkBox(inp);
+  });
 }
 
 // typed but not picked: look it up once the person moves on
@@ -784,7 +825,11 @@ function refreshPlanButton(){
   if (!go.disabled) go.textContent = n ? `Plan route · ${n} stop${n > 1 ? "s" : ""}` : "Plan route";
 }
 function syncRows(){
-  const rows = [...$("jobs").children], extra = rows.length > BASE_BOXES;
+  // keep exactly one empty box at the end; drop empty ones in the middle (unless being typed in)
+  [...$("jobs").children].slice(0, -1).forEach(li => { const i = li.querySelector("input"); if (!i.value.trim() && i !== document.activeElement) li.remove(); });
+  const last = $("jobs").lastElementChild;
+  if (!last || last.querySelector("input").value.trim()) addRow();
+  const rows = [...$("jobs").children], extra = false;
   rows.forEach((li, i) => {
     const n = i+1, inp = li.querySelector("input");
     li.querySelector(".jn").textContent = n;
@@ -795,7 +840,7 @@ function syncRows(){
 }
 function addRow(val = "", p = null){
   const li = document.createElement("li");
-  li.innerHTML = '<span class="jn"></span><div class="addr-box"><input type="text" autocomplete="off" enterkeyhint="next" placeholder="Address, city"></div>' +
+  li.innerHTML = '<span class="jn"></span><div class="addr-box"><input type="text" autocomplete="off" enterkeyhint="next" placeholder="Add a stop (address, city)"></div>' +
                  '<div class="note" aria-live="polite"></div>';
   const inp = li.querySelector("input"); inp.value = val; setPlace(inp, p); wireBox(inp);
   $("jobs").appendChild(li);
@@ -803,10 +848,7 @@ function addRow(val = "", p = null){
 }
 function setJobs(list){        // list of {label, lat?, lon?, street?} or strings
   $("jobs").innerHTML = "";
-  for (let i = 0; i < Math.max(BASE_BOXES, list.length); i++){
-    const j = list[i]; if (!j){ addRow(); continue; }
-    if (typeof j === "string") addRow(j); else addRow(j.label, j.lat != null ? j : null);
-  }
+  list.filter(Boolean).forEach(j => { if (typeof j === "string") addRow(j); else addRow(j.label, j.lat != null ? j : null); });
   syncRows();
 }
 
@@ -821,10 +863,14 @@ const planFor = d => plans[d] || (plans[d] = {});
 function saveDraft(){
   planFor(selDay).draft = {start:{value:$("start").value, p:placeOf($("start"))},
     jobs:boxes().map(b => ({value:b.value, p:placeOf(b)})), home:$("home").checked, tolls:$("tolls").checked};
-  tidyPlan(selDay); storePlans(); if ($("week").children.length) drawWeekSoon();
+  tidyPlan(selDay); storePlans(); updateSetup(); if ($("week").children.length) drawWeekSoon();
 }
 let weekTimer = 0; const drawWeekSoon = () => { clearTimeout(weekTimer); weekTimer = setTimeout(drawWeek, 150); };
 function loadDraft(){ return (plans[selDay] || {}).draft || null; }
+function updateSetup(){
+  const v = $("start").value.trim(), from = !v ? "no start set" : v === DEFAULT_START ? "HQ" : v.split(",")[0];
+  $("setup-sum").textContent = `From ${from} · ${$("home").checked ? "back to HQ" : "ends at last stop"} · ${$("tolls").checked ? "no tolls" : "tolls OK"}`;
+}
 function saveMine(){ const pl = planFor(selDay); pl.route = route; pl.done = [...done]; tidyPlan(selDay); storePlans(); }
 function loadMine(){ const pl = plans[selDay]; return pl && pl.route ? pl : null; }
 function tidyPlan(d){                      // forget days with nothing on them
@@ -852,14 +898,14 @@ const status = (text, err) => { const s = $("status"); s.textContent = text; s.c
 async function plan(){
   closeSugg();
   const startInp = $("start"), filled = boxes().filter(b => b.value.trim());
-  if (!startInp.value.trim()){ status("Add where you start the day.", true); startInp.focus(); return; }
+  if (!startInp.value.trim()){ status("Add where you start the day.", true); $("setup").open = true; startInp.focus(); return; }
   if (!filled.length){ status("Add at least one job address.", true); boxes()[0].focus(); return; }
   const go = $("go"); go.disabled = true; go.textContent = "Planning…"; status("");
   try {
     const all = [startInp, ...filled];
     const places = await Promise.all(all.map(checkBox));
     const bad = all.filter((b, i) => !places[i]);
-    if (bad.length){ bad.forEach(b => showNote(b, "bad")); status(`Fix the address${bad.length > 1 ? "es" : ""} marked ⚠ Not found, then try again.`, true); return; }
+    if (bad.length){ bad.forEach(b => showNote(b, "bad")); if (bad.includes(startInp)) $("setup").open = true; status(`Fix the address${bad.length > 1 ? "es" : ""} marked ⚠ Not found, then try again.`, true); return; }
 
     const start = {...places[0], label:startInp.value.trim()};
     const seen = {};
@@ -917,7 +963,6 @@ function showRoute(){
      <div class="actions">${links}</div>
      <div class="map" id="map" role="img" aria-label="Map of today's route"></div>
      <p class="credit">Addresses and routes by <a href="https://www.geoapify.com/" target="_blank" rel="noopener">Geoapify</a></p>
-     <ol class="glance" aria-label="Route by street">${row("g-home","","HQ","Start")}${stops.map((j, i) => row("", ` data-id="${esc(j.id)}"`, esc(findC(j.cust)?.name || streetOf(j)) + (findC(j.cust)?.star ? ' <span class="star-tag" aria-label="Premium">★</span>' : ""), "Stop " + (i+1))).join("")}${endsHome ? row("g-home","","HQ","End") : ""}</ol>
      <ol class="stops"><li class="home start"><div class="home-ic">${HOUSE}</div><div class="stop-body"><div class="addr">Start at HQ</div><div class="sub">${esc(route.start.label)}</div></div></li>${stops.map((j, i) =>
         `<li data-id="${esc(j.id)}"${findC(j.cust)?.star ? ' class="prem"' : ""}><div class="num">${i+1}</div><div class="stop-body">${stopText(j)}` +
         `<div class="stop-acts"><label class="done-box"><input type="checkbox" id="done-${i+1}" data-id="${esc(j.id)}"> Job done</label>${waze(j, "stop " + (i+1))}</div></div></li>`).join("")}
@@ -997,7 +1042,7 @@ async function loadDay(){
     $("start").value = draft.start.value || DEFAULT_START; setPlace($("start"), draft.start.p); $("home").checked = draft.home !== false; $("tolls").checked = draft.tolls !== false;
     setJobs(draft.jobs.map(j => j.p ? {...j.p, label:j.value} : j.value).filter(Boolean));
   }
-  status(""); showRoute(); drawWeek();
+  status(""); updateSetup(); showRoute(); drawWeek();
   if (typeof sentIds !== "undefined"){ sentIds = new Set(boxes().map(b => b.dataset.cust).filter(Boolean)); if (typeof renderBulk === "function" && cust.length) { storeLocal(); renderBulk(false); } }
 }
 
@@ -1383,20 +1428,18 @@ function renderList(){
 }
 function row(c, n){
   const id = esc(c.id), due = dueOf(c), sent = sentIds.has(c.id), last = (c.hist || [])[0];
-  const meta = (c.freq ? `<span class="b-tag">${esc(FREQ_SHORT[c.freq] || `Every ${c.freq} days`)}</span>` : "") +
-    ((c.days || []).length ? `<span class="b-tag b-tag-day">${esc(WEEK.filter(d => c.days.includes(d)).map(d => DAY_NAMES[d]).join(" · "))}</span>` : "") +
-    (last ? `<span class="b-last">Last ${esc(fmtDay(last))}</span>` : "");
-  const dueTag = c.paused ? `<span class="b-paused">Paused</span>` : due ? `<span class="${due.due ? "b-due" + (due.late ? " late" : "") : due.soon ? "b-soon" : "b-next"}">${esc(due.text)}</span>` : "";
-  const sentTag = (c.hidden ? `<span class="b-hidden">Hidden on map</span>` : "") + (sent ? `<span class="b-onroute">On route</span>` : "");
+  // one colored badge for what needs attention; everything else is a quiet gray line
+  const badge = c.paused ? `<span class="b-badge b-paused">Paused</span>`
+    : due && (due.due || due.soon) ? `<span class="b-badge ${due.late ? "b-due late" : due.due ? "b-due" : "b-soon"}">${esc(due.text)}</span>` : "";
+  const detail = [c.freq ? FREQ_SHORT[c.freq] || `Every ${c.freq} days` : "", (c.days || []).length ? WEEK.filter(d => c.days.includes(d)).map(d => DAY_NAMES[d]).join(", ") : "",
+    due && !due.due && !due.soon ? due.text : "", last ? "Last " + fmtDay(last) : "", sent ? "On route" : "", c.hidden ? "Hidden on map" : ""].filter(Boolean).join(" · ");
+  const title = c.name || nameOf(c).split(",")[0], sub = c.name ? shortAddr(c) : nameOf(c).split(",").slice(1, 3).map(t => t.trim()).join(", ");
   return `<li class="b-row${sent ? " sent" : ""}${c.star ? " star" : ""}${c.paused ? " paused" : ""}${c.hidden ? " hidden-pin" : ""}" data-id="${id}">` +
-    `<input type="checkbox" id="cb-${id}" data-id="${id}" aria-label="Select ${esc(c.name || shortAddr(c))}">` +
+    `<input type="checkbox" id="cb-${id}" data-id="${id}" aria-label="Select ${esc(title)}">` +
     `<button class="b-num" type="button" data-show="${id}" aria-label="Show ${n} on the map" title="Show on map">${n}</button>` +
-    `<label class="b-text" for="cb-${id}">${c.name ? `<span class="b-name">${c.star ? '<span class="b-star" aria-label="Premium">★</span>' : ""}${esc(c.name)}</span><span class="b-addr">${esc(shortAddr(c))}</span>`
-      : `<span class="b-name b-name-addr">${c.star ? '<span class="b-star" aria-label="Premium">★</span>' : ""}${esc(nameOf(c).split(",")[0])}</span><span class="b-addr">${esc(nameOf(c).split(",").slice(1, 3).map(t => t.trim()).join(", "))}</span>`}</label>` +
-    `<div class="b-acts">` +
-    `<button class="b-ic b-hide${c.hidden ? " on" : ""}" type="button" data-hide="${id}" aria-pressed="${!!c.hidden}" aria-label="${c.hidden ? "Show on map" : "Hide from map"}" title="${c.hidden ? "Hidden from the map. Tap to show it again." : "Hide from map"}">${c.hidden ? IC.eyeOff : IC.eye}</button>` +
-    `<button class="b-ic" type="button" data-edit="${id}" aria-label="Edit customer" title="Edit customer">${IC.edit}</button></div>` +
-    (meta || dueTag || sentTag || c.notes ? `<div class="b-sub">${meta || dueTag || sentTag ? `<span class="b-meta">${dueTag}${meta}${sentTag}</span>` : ""}${c.notes ? `<span class="b-note">${esc(c.notes)}</span>` : ""}</div>` : "") +
+    `<button class="b-text" type="button" data-edit="${id}" aria-label="Open ${esc(title)}"><span class="b-name${c.name ? "" : " b-name-addr"}">${c.star ? '<span class="b-star" aria-label="Premium">★</span>' : ""}${esc(title)}</span><span class="b-addr">${esc(sub)}</span></button>` +
+    `<div class="b-acts"><button class="b-ic b-hide${c.hidden ? " on" : ""}" type="button" data-hide="${id}" aria-pressed="${!!c.hidden}" aria-label="${c.hidden ? "Show on map" : "Hide from map"}" title="${c.hidden ? "Hidden from the map. Tap to show it again." : "Hide from map"}">${c.hidden ? IC.eyeOff : IC.eye}</button></div>` +
+    (badge || detail || c.notes ? `<div class="b-sub" data-edit="${id}">${badge}${detail ? `<span class="b-detail">${esc(detail)}</span>` : ""}${c.notes ? `<span class="b-note">${esc(c.notes)}</span>` : ""}</div>` : "") +
     `</li>`;
 }
 function editor(c){
@@ -1409,10 +1452,10 @@ function editor(c){
     <label class="f">Notes<textarea name="notes" rows="2" maxlength="500" placeholder="Gate code, dog in yard, mow height…">${esc(d.notes)}</textarea></label>
     <label class="f">How often<select name="freq">${FREQS.map(([v, t]) => `<option value="${v}"${+d.freq === v ? " selected" : ""}>${t}</option>`).join("")}</select></label>
     <fieldset class="f"><legend>Service days</legend><div class="b-days">${WEEK.map(n => `<label class="b-day"><input type="checkbox" name="day" value="${n}"${d.days.includes(n) ? " checked" : ""}><span>${DAY_NAMES[n]}</span></label>`).join("")}</div></fieldset>
-    <fieldset class="f"><legend>Visits${d.hist.length ? ` · ${d.hist.length}` : ""}</legend>
-      ${d.hist.length ? `<div class="b-visits">${d.hist.map(h => `<span class="b-visit">${esc(fmtDay(h))}<button type="button" data-unvisit="${h}" aria-label="Remove visit on ${esc(fmtDay(h))}">×</button></span>`).join("")}</div>` : `<p class="b-hint">No visits yet. Checking "Job done" on a route adds one.</p>`}
-      <div class="b-addvisit"><input type="date" name="visit" value="${today()}" max="${today()}" aria-label="Visit date"><button class="btn btn-line" type="button" data-addvisit>Add visit</button></div>
-    </fieldset>
+    <details class="b-vbox"${d.visitsOpen ? " open" : ""}><summary><b>Visits</b><span>${d.hist.length ? `${d.hist.length} · last ${esc(fmtDay(d.hist[0]))}` : "None yet"}</span></summary>
+      <div class="b-vbody">${d.hist.length ? `<div class="b-visits">${d.hist.map(h => `<span class="b-visit">${esc(fmtDay(h))}<button type="button" data-unvisit="${h}" aria-label="Remove visit on ${esc(fmtDay(h))}">×</button></span>`).join("")}</div>` : `<p class="b-hint">No visits yet. Checking "Job done" on a route adds one.</p>`}
+      <div class="b-addvisit"><input type="date" name="visit" value="${today()}" max="${today()}" aria-label="Visit date"><button class="btn btn-line" type="button" data-addvisit>Add visit</button></div></div>
+    </details>
     <label class="b-switch"><input type="checkbox" name="paused"${d.paused ? " checked" : ""}><span class="b-sw" aria-hidden="true"></span><span class="b-sw-t"><b>Pause this customer</b><small>Hides them from the map and the Due list. Their info and visits are kept.</small></span></label>
     <div class="b-ed-btns"><button class="btn btn-main" type="submit">Save</button><button class="btn btn-line" type="button" data-cancel>Cancel</button></div>
   </form>`;
@@ -1448,6 +1491,7 @@ function drawBulkMap(fit){
     bmarks.push({id:c.id, el, ll:[c.lon, c.lat], marker:new maplibregl.Marker({element:el}).setLngLat([c.lon, c.lat]).addTo(bmap)});
   });
   showNames();
+  $("map-key").hidden = !bmarks.some(m => m.el && /\b(ok|soon|due|late|star)\b/.test(m.el.className));
   if (fit && shown.length){
     const pts = shown.map(c => [c.lon, c.lat]);
     bmap.fitBounds(pts.reduce((bb, p) => bb.extend(p), new maplibregl.LngLatBounds(pts[0], pts[0])), {padding:40, duration:0, maxZoom:14});
@@ -1574,8 +1618,14 @@ function readEditor(form){
 
 /* ---- wiring ---- */
 $("bulk-find").addEventListener("input", renderList);
-["bulk-stars","bulk-due","bulk-paused"].forEach(id => $(id).addEventListener("click", () => { const b = $(id); b.setAttribute("aria-pressed", String(!pressed(id))); renderList(); drawBulkMap(true); updatePicks(); }));
-$("bulk-day").addEventListener("change", () => { renderList(); drawBulkMap(true); updatePicks(); });
+// the Filter button: shows how many of its filters are on
+function moreCount(){
+  const n = (pressed("bulk-stars") ? 1 : 0) + (pressed("bulk-paused") ? 1 : 0) + ($("bulk-day").value !== "" ? 1 : 0);
+  $("bulk-more-t").textContent = n ? `Filter · ${n}` : "Filter"; $("bulk-more").classList.toggle("active", !!n);
+}
+$("bulk-more").addEventListener("click", () => { const open = $("bulk-morebox").hidden; $("bulk-morebox").hidden = !open; $("bulk-more").setAttribute("aria-expanded", String(open)); });
+["bulk-stars","bulk-due","bulk-paused"].forEach(id => $(id).addEventListener("click", () => { const b = $(id); b.setAttribute("aria-pressed", String(!pressed(id))); renderList(); drawBulkMap(true); updatePicks(); moreCount(); }));
+$("bulk-day").addEventListener("change", () => { renderList(); drawBulkMap(true); updatePicks(); moreCount(); });
 $("bulk-all").addEventListener("click", () => { $("bulk-list").querySelectorAll(".b-row[data-id]:not(.sent)").forEach(li => picked.add(li.dataset.id)); updatePicks(); });
 // Add to route: pick the day first (today or later this week)
 $("bulk-addsel").addEventListener("click", () => {
@@ -1611,6 +1661,7 @@ $("bulk-remove").addEventListener("click", () => bury(new Set(picked)));
 $("bulk-list").addEventListener("change", e => { const c = e.target.closest("input[data-id]"); if (c) togglePick(c.dataset.id); });
 const sheet = $("cust-sheet");
 sheet.addEventListener("change", e => { const f = e.target.closest(".b-editor"); if (f) readEditor(f); });
+sheet.addEventListener("toggle", e => { if (e.target.classList && e.target.classList.contains("b-vbox") && draft) draft.visitsOpen = e.target.open; }, true);
 sheet.addEventListener("input", e => { const f = e.target.closest(".b-editor"); if (f) readEditor(f); });
 sheet.addEventListener("submit", e => { e.preventDefault(); const f = e.target.closest(".b-editor"); if (f) readEditor(f); closeEditor(true); });
 sheet.addEventListener("keydown", e => {
@@ -1670,7 +1721,6 @@ $("out").addEventListener("click", e => { if (e.target.closest('.nav[aria-disabl
 // flipping a box re-plans right away when a route is already showing
 ["home","tolls"].forEach(id => $(id).addEventListener("change", () => { saveDraft(); markStale(); if (route && !$("go").disabled) plan(); }));
 $("go").addEventListener("click", plan);
-$("add").addEventListener("click", () => { const inp = addRow(); syncRows(); saveDraft(); inp.focus(); });
 $("clear").addEventListener("click", () => {
   const jobs = boxes().filter(b => b.value.trim()).map(b => { const p = placeOf(b); return p ? {...p, label:b.value.trim()} : b.value.trim(); });
   if (!jobs.length && !route) return;
