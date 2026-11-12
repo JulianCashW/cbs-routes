@@ -16,7 +16,7 @@
 :root{
   --bg:#f2eee3; --surface:#faf8f3; --field:#ffffff; --soft:#efebe1; --line:#ddd7ca;
   --ink:#22201d; --muted:#6c675e; --accent:#b9bf8e; --accent-edge:#a5ac78; --on-accent:#23261a; --olive-ink:#868d5e;
-  --deep:#22201d; --on-deep:#faf8f3; --sky:#e2e4cd; --on-sky:#22201d; --route:#7e8653;
+  --gold:#b8902e; --gold-soft:#ecd37f; --deep:#22201d; --on-deep:#faf8f3; --sky:#e2e4cd; --on-sky:#22201d; --route:#7e8653;
   --display:"Inter Tight","Helvetica Neue",Arial,sans-serif;
   --body:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   color-scheme:light;
@@ -54,11 +54,8 @@ input[type=text],input[type=password]{width:100%;font-size:16px;background:var(-
 .sugg li span{font-size:13px;color:var(--muted)}
 .sugg li[aria-selected="true"],.sugg li:hover{background:var(--soft)}
 .jobs{list-style:none;margin:0;padding:0;display:grid;gap:8px}
-.jobs > li{display:grid;grid-template-columns:24px minmax(0,1fr) 64px;gap:8px;align-items:center}
+.jobs > li{display:grid;grid-template-columns:24px minmax(0,1fr);gap:8px;align-items:center}
 .jn{font-family:var(--display);font-weight:600;font-size:16px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
-.clr{appearance:none;border:0;background:transparent;color:var(--muted);font-size:13px;font-weight:700;padding:10px 4px;border-radius:8px;cursor:pointer;visibility:hidden}
-.jobs > li.filled .clr,.jobs > li.extra .clr{visibility:visible}
-.clr:hover{color:var(--ink);background:var(--soft)}
 .note{grid-column:2 / -1;font-size:13px;line-height:1.4;color:var(--muted);margin:-2px 0 2px}
 .note:empty{display:none}
 #start-note{margin-top:6px}
@@ -148,8 +145,8 @@ textarea{width:100%;min-height:150px;font:inherit;font-size:16px;line-height:1.4
 .selbar b{font-size:14px;margin-right:auto;padding-left:4px}
 .selbar .btn-main{width:auto;min-height:40px;padding:8px 16px}
 .selbar .btn-line{padding:8px 12px;font-size:14px}
-.b-tools{display:flex;gap:12px;align-items:center;margin:0 0 8px}
-.b-tools input{flex:1;min-width:0;font-size:16px;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+.b-tools{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin:0 0 8px}
+.b-tools input{flex:1 1 220px;min-width:0;font-size:16px;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
 .b-list{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:12px;background:var(--field);max-height:520px;overflow:auto}
 .b-row{display:flex;align-items:center;gap:6px;padding:8px 8px 8px 12px;border-top:1px solid var(--line);font-size:14px}
 .b-row:first-child{border-top:0}
@@ -162,13 +159,24 @@ textarea{width:100%;min-height:150px;font:inherit;font-size:16px;line-height:1.4
 .b-row.sent .b-addr{color:var(--muted)}
 .b-row.sent .b-num{background:var(--line);color:var(--muted)}
 .b-row small{color:var(--muted);font-size:12px;font-weight:700;white-space:nowrap}
-.b-show{appearance:none;border:0;background:transparent;color:var(--muted);font-size:13px;font-weight:600;padding:6px 8px;border-radius:8px;cursor:pointer}
-.b-show:hover{background:var(--soft);color:var(--ink)}
+.b-text{display:flex;flex-direction:column;min-width:0;line-height:1.35}
+.b-name{font-weight:700;font-size:14px;overflow-wrap:anywhere}
+.b-name + .b-addr{font-size:13px;color:var(--muted)}
+.b-acts{display:flex;flex:none}
+.b-ic{appearance:none;border:0;background:transparent;color:var(--muted);width:34px;height:34px;border-radius:8px;display:grid;place-items:center;cursor:pointer;padding:0}
+.b-ic svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.b-ic:hover{background:var(--soft);color:var(--ink)}
+.b-ic.on{color:var(--gold)}
+.b-ic.on svg{fill:currentColor}
+.b-edit{flex:1;min-width:0;font-size:16px;background:var(--field);border:1px solid var(--accent-edge);border-radius:8px;padding:6px 10px}
+.b-filter{appearance:none;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:14px;font-weight:600;padding:8px 12px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.b-filter[aria-pressed="true"]{background:var(--gold-soft);border-color:var(--gold);color:var(--ink)}
 .b-empty{padding:14px 12px;color:var(--muted);font-size:14px}
 .b-bad{margin-top:14px;font-size:14px}
 .b-bad-h{display:flex;gap:10px;align-items:baseline}
 .b-bad ul{margin:6px 0 0;padding-left:18px;color:var(--muted)}
 .b-pin{appearance:none;min-width:24px;height:24px;padding:0 5px;border-radius:12px;border:2px solid #fff;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font:700 11px var(--display);box-shadow:0 1px 3px rgba(0,0,0,.3);cursor:pointer}
+.b-pin.star{background:var(--gold-soft);color:#2b2410}
 .b-pin.sel{background:var(--ink);color:var(--on-deep);transform:scale(1.2)}
 .b-pin.sent{opacity:.35}
 
@@ -230,7 +238,8 @@ textarea{width:100%;min-height:150px;font:inherit;font-size:16px;line-height:1.4
       </div>
       <div id="bulk-index" hidden>
         <div class="b-tools">
-          <input type="search" id="bulk-find" placeholder="Search the list" aria-label="Search addresses" autocomplete="off">
+          <input type="search" id="bulk-find" placeholder="Search names or addresses" aria-label="Search names or addresses" autocomplete="off">
+          <button class="b-filter" id="bulk-stars" type="button" aria-pressed="false">★ Premium</button>
           <button class="btn-link" id="bulk-all" type="button">Select all</button>
         </div>
         <ol class="b-list" id="bulk-list" aria-label="Address index"></ol>
@@ -424,23 +433,18 @@ function refreshPlanButton(){
 function syncRows(){
   const rows = [...$("jobs").children], extra = rows.length > BASE_BOXES;
   rows.forEach((li, i) => {
-    const n = i+1, inp = li.querySelector("input"), btn = li.querySelector(".clr");
+    const n = i+1, inp = li.querySelector("input");
     li.querySelector(".jn").textContent = n;
     inp.id = "job-" + n; inp.setAttribute("aria-label", "Job " + n);
     li.classList.toggle("filled", !!inp.value.trim()); li.classList.toggle("extra", extra);
-    btn.textContent = extra ? "Remove" : "Clear"; btn.setAttribute("aria-label", btn.textContent + " job " + n);
   });
   refreshPlanButton();
 }
 function addRow(val = "", p = null){
   const li = document.createElement("li");
   li.innerHTML = '<span class="jn"></span><div class="addr-box"><input type="text" autocomplete="off" enterkeyhint="next" placeholder="Address, city"></div>' +
-                 '<button class="clr" type="button">Clear</button><div class="note" aria-live="polite"></div>';
+                 '<div class="note" aria-live="polite"></div>';
   const inp = li.querySelector("input"); inp.value = val; setPlace(inp, p); wireBox(inp);
-  li.querySelector(".clr").addEventListener("click", () => {
-    if ($("jobs").children.length > BASE_BOXES) li.remove(); else { inp.value = ""; setPlace(inp, null); showNote(inp, ""); inp.focus(); }
-    syncRows(); saveDraft(); markStale();
-  });
   $("jobs").appendChild(li);
   return inp;
 }
@@ -637,6 +641,12 @@ try { bulk = JSON.parse(localStorage.getItem("cbs-bulk") || "[]") || []; } catch
 function saveBulk(){ try { localStorage.setItem("cbs-bulk", JSON.stringify(bulk)); } catch(e){} }
 const onMap = () => bulk.filter(b => b.lat != null);
 const nameOf = b => b.label || b.text;
+const IC = {
+  star:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>',
+  edit:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>',
+  show:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.6-6-11a6 6 0 0 1 12 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg>'
+};
+let editing = null;   // id of the row whose name is being typed
 const bstatus = (text, err) => { const s = $("bulk-status"); s.textContent = text; s.className = "status" + (err ? " err" : ""); };
 
 async function putOnMap(){
@@ -675,12 +685,20 @@ function renderList(){
   $("bulk-count").textContent = ok.length ? `${ok.length} on map` : "";
   $("bulk-index").hidden = !bulk.length;
   $("bulk").classList.toggle("has-pins", !!ok.length);
-  const shown = ok.map((b, i) => ({b, n:i+1})).filter(({b}) => !q || nameOf(b).toLowerCase().includes(q) || b.text.toLowerCase().includes(q));
-  $("bulk-list").innerHTML = shown.length ? shown.map(({b, n}) =>
-    `<li class="b-row${b.sent ? " sent" : ""}" data-id="${esc(b.id)}"><label><input type="checkbox" data-id="${esc(b.id)}">` +
-    `<span class="b-num">${n}</span><span class="b-addr">${esc(nameOf(b))}</span></label>` +
-    `${b.sent ? "<small>On route</small>" : ""}<button class="b-show" type="button" data-show="${esc(b.id)}" aria-label="Show stop ${n} on the map">Show</button></li>`).join("")
-    : `<li class="b-empty">${ok.length ? "No addresses match that search." : "None of these were found yet."}</li>`;
+  const starsOnly = $("bulk-stars").getAttribute("aria-pressed") === "true";
+  const shown = ok.map((b, i) => ({b, n:i+1})).filter(({b}) => (!starsOnly || b.star) &&
+    (!q || [b.name, nameOf(b), b.text].some(t => t && t.toLowerCase().includes(q))));
+  $("bulk-list").innerHTML = shown.length ? shown.map(({b, n}) => {
+    const id = esc(b.id), main = editing === b.id
+      ? `<input type="checkbox" data-id="${id}" aria-label="Select ${n}"><span class="b-num">${n}</span><input class="b-edit" type="text" data-name="${id}" value="${esc(b.name || "")}" placeholder="Name (optional)" aria-label="Name for ${esc(nameOf(b))}" enterkeyhint="done">`
+      : `<label><input type="checkbox" data-id="${id}"><span class="b-num">${n}</span><span class="b-text">${b.name ? `<span class="b-name">${esc(b.name)}</span>` : ""}<span class="b-addr">${esc(nameOf(b))}</span></span></label>`;
+    return `<li class="b-row${b.sent ? " sent" : ""}" data-id="${id}">${main}${b.sent ? "<small>On route</small>" : ""}<div class="b-acts">` +
+      `<button class="b-ic${b.star ? " on" : ""}" type="button" data-star="${id}" aria-pressed="${!!b.star}" aria-label="Premium" title="Premium">${IC.star}</button>` +
+      `<button class="b-ic" type="button" data-edit="${id}" aria-label="${b.name ? "Edit name" : "Add a name"}" title="${b.name ? "Edit name" : "Add a name"}">${IC.edit}</button>` +
+      `<button class="b-ic" type="button" data-show="${id}" aria-label="Show ${n} on the map" title="Show on map">${IC.show}</button></div></li>`;
+  }).join("")
+    : `<li class="b-empty">${!ok.length ? "None of these were found yet." : starsOnly && !ok.some(b => b.star) ? "No premium addresses yet. Tap the star on a row to mark one." : "Nothing matches that search."}</li>`;
+  const ed = $("bulk-list").querySelector(".b-edit"); if (ed){ ed.focus(); ed.setSelectionRange(ed.value.length, ed.value.length); }
   $("bulk-bad").innerHTML = bad.length ? `<div class="b-bad"><div class="b-bad-h"><b>⚠ Not found (${bad.length})</b><button class="btn-link" type="button" id="bulk-dropbad">Remove these</button></div>` +
     `<ul>${bad.map(b => `<li>${esc(b.text)}</li>`).join("")}</ul></div>` : "";
   updatePicks();
@@ -704,8 +722,9 @@ function drawBulkMap(fit){
   const ok = onMap();
   ok.forEach((b, i) => {
     const el = document.createElement("button"); el.type = "button";
-    el.className = "b-pin" + (b.sent ? " sent" : ""); el.textContent = i + 1; el.title = nameOf(b);
-    el.setAttribute("aria-label", `Select ${i + 1}, ${nameOf(b)}`);
+    el.className = "b-pin" + (b.sent ? " sent" : "") + (b.star ? " star" : ""); el.textContent = i + 1;
+    el.title = (b.name ? b.name + " · " : "") + nameOf(b) + (b.star ? " · Premium" : "");
+    el.setAttribute("aria-label", `Select ${i + 1}, ${el.title}`);
     el.addEventListener("click", e => { e.stopPropagation(); togglePick(b.id); });
     bmarks.push({id:b.id, el, marker:new maplibregl.Marker({element:el}).setLngLat([b.lon, b.lat]).addTo(bmap)});
   });
@@ -751,7 +770,24 @@ $("bulk-addsel").addEventListener("click", () => addToRoute([...picked]));
 $("bulk-unsel").addEventListener("click", () => { picked.clear(); updatePicks(); });
 $("bulk-remove").addEventListener("click", () => { bulk = bulk.filter(b => !picked.has(b.id)); picked.clear(); saveBulk(); renderBulk(false); });
 $("bulk-list").addEventListener("change", e => { const c = e.target.closest("input[data-id]"); if (c) togglePick(c.dataset.id); });
+// names: save when the box loses focus or Enter is pressed; Escape cancels
+function saveName(inp, keep){
+  const b = bulk.find(x => x.id === inp.dataset.name); editing = null;
+  if (b && keep){ const v = inp.value.trim().slice(0, 80); if (v) b.name = v; else delete b.name; saveBulk(); drawBulkMap(false); }
+  renderList();
+}
+$("bulk-list").addEventListener("keydown", e => {
+  const inp = e.target.closest(".b-edit"); if (!inp) return;
+  if (e.key === "Enter"){ e.preventDefault(); inp.dataset.done = "1"; saveName(inp, true); }
+  if (e.key === "Escape"){ inp.dataset.done = "1"; saveName(inp, false); }
+});
+$("bulk-list").addEventListener("focusout", e => { const inp = e.target.closest(".b-edit"); if (inp && !inp.dataset.done){ inp.dataset.done = "1"; saveName(inp, true); } });
+$("bulk-stars").addEventListener("click", () => { const b = $("bulk-stars"); b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true")); renderList(); });
 $("bulk-list").addEventListener("click", e => {
+  const st = e.target.closest("[data-star]");
+  if (st){ const b = bulk.find(x => x.id === st.dataset.star); if (b){ b.star = !b.star; if (!b.star) delete b.star; saveBulk(); renderList(); drawBulkMap(false); updatePicks(); } return; }
+  const ed = e.target.closest("[data-edit]");
+  if (ed){ editing = editing === ed.dataset.edit ? null : ed.dataset.edit; renderList(); return; }
   const s = e.target.closest("[data-show]"); if (!s || !bmap) return;
   const b = bulk.find(x => x.id === s.dataset.show); if (!b) return;
   bmap.flyTo({center:[b.lon, b.lat], zoom:15});
