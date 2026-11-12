@@ -53,6 +53,29 @@ const place = r => ({
   exact: !!(r.housenumber || r.result_type === "building" || r.result_type === "amenity")
 });
 
+// Address lookups: never wait more than a few seconds, retry once if Geoapify says "slow down",
+// and remember answers at Cloudflare's edge for a day so repeat lookups come back instantly.
+async function geoFetch(u) {
+  for (let i = 0; i < 2; i++) {
+    try {
+      const r = await fetch(u, { signal: AbortSignal.timeout(4500) });
+      if (r.status === 429 && i === 0) { await new Promise(res => setTimeout(res, 350)); continue; }
+      return r;
+    } catch (e) { if (i === 1) throw e; }
+  }
+}
+const edge = typeof caches !== "undefined" ? caches.default : null;
+async function remembered(kind, text, ctx, make) {
+  const key = new Request(`https://cbs-cache.local/${kind}?q=${encodeURIComponent(text.toLowerCase().replace(/\s+/g, " "))}`);
+  if (edge) { const hit = await edge.match(key); if (hit) return hit.json(); }
+  const data = await make();
+  if (edge && data) {
+    const put = edge.put(key, new Response(JSON.stringify(data), { headers: { "content-type": "application/json", "cache-control": "public, max-age=86400" } }));
+    ctx && ctx.waitUntil ? ctx.waitUntil(put) : await put;
+  }
+  return data;
+}
+
 /* ---------------- routes ---------------- */
 async function login(request, env) {
   const { pin } = await request.json().catch(() => ({}));
@@ -64,24 +87,33 @@ async function login(request, env) {
   return json({ ok: true }, 200, { "set-cookie": `${COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=7776000` });
 }
 
-async function suggest(url, env) {
+async function suggest(url, env, ctx) {
   const text = (url.searchParams.get("text") || "").trim();
   if (text.length < 3) return json({ results: [] });
-  const r = await fetch(`${GEO}/geocode/autocomplete?text=${encodeURIComponent(text)}&limit=5&${AREA}&apiKey=${env.GEOAPIFY_KEY}`);
-  if (!r.ok) return fail(502, "Address lookup is unavailable right now");
-  const data = await r.json();
-  return json({ results: (data.results || []).map(place) });
+  try {
+    const out = await remembered("suggest", text, ctx, async () => {
+      const r = await geoFetch(`${GEO}/geocode/autocomplete?text=${encodeURIComponent(text)}&limit=6&${AREA}&apiKey=${env.GEOAPIFY_KEY}`);
+      if (!r.ok) return null;
+      return { results: ((await r.json()).results || []).map(place) };
+    });
+    return out ? json(out) : fail(502, "Address lookup is unavailable right now");
+  } catch (e) { return fail(504, "Address lookup took too long"); }
 }
 
-async function geocode(url, env) {
+async function geocode(url, env, ctx) {
   const text = (url.searchParams.get("text") || "").trim();
   if (!text) return json({ result: null });
-  const r = await fetch(`${GEO}/geocode/search?text=${encodeURIComponent(text)}&limit=1&${AREA}&apiKey=${env.GEOAPIFY_KEY}`);
-  if (!r.ok) return fail(502, "Address lookup is unavailable right now");
-  const best = ((await r.json()).results || [])[0];
-  // Only accept a confident match; otherwise the page shows "Not found".
-  const ok = best && (!best.rank || best.rank.confidence >= 0.5);
-  return json({ result: ok ? place(best) : null });
+  try {
+    const out = await remembered("geocode", text, ctx, async () => {
+      const r = await geoFetch(`${GEO}/geocode/search?text=${encodeURIComponent(text)}&limit=1&${AREA}&apiKey=${env.GEOAPIFY_KEY}`);
+      if (!r.ok) return null;
+      const best = ((await r.json()).results || [])[0];
+      // Only accept a confident match; otherwise the page shows "Not found".
+      const ok = best && (!best.rank || best.rank.confidence >= 0.5);
+      return { result: ok ? place(best) : null };
+    });
+    return out ? json(out) : fail(502, "Address lookup is unavailable right now");
+  } catch (e) { return fail(504, "Address lookup took too long"); }
 }
 
 async function plan(request, env) {
@@ -207,7 +239,8 @@ async function saveCustomers(request, env) {
 }
 
 /* ---------------- entry point ---------------- */
-export async function onRequest({ request, env }) {
+export async function onRequest(ctx) {
+  const { request, env } = ctx;
   const url = new URL(request.url);
   const path = url.pathname.replace(/^\/api\/?/, "").replace(/\/$/, "");
   const method = request.method;
@@ -223,8 +256,8 @@ export async function onRequest({ request, env }) {
     if (!sameText(readCookie(request, COOKIE), await sessionToken(env))) return fail(401, "PIN needed");
 
     if (path === "session") return json({ ok: true });
-    if (path === "suggest" && method === "GET") return await suggest(url, env);
-    if (path === "geocode" && method === "GET") return await geocode(url, env);
+    if (path === "suggest" && method === "GET") return await suggest(url, env, ctx);
+    if (path === "geocode" && method === "GET") return await geocode(url, env, ctx);
     if (path === "plan" && method === "POST") return await plan(request, env);
     if (path === "day" && method === "GET") return await getDay(url, env);
     if (path === "day" && method === "PUT") return await saveDay(request, url, env);

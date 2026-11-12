@@ -55,7 +55,10 @@ input[type=text]:focus,input[type=password]:focus,input[type=search]:focus,input
 .sugg li{padding:8px 10px;border-radius:7px;cursor:pointer;line-height:1.3}
 .sugg li b{display:block;font-weight:600;font-size:15px}
 .sugg li span{font-size:13px;color:var(--muted)}
-.sugg li[aria-selected="true"],.sugg li:hover{background:var(--soft)}
+.sugg li[aria-selected="true"],.sugg li[data-i]:hover{background:var(--soft)}
+.sugg li.sugg-msg{cursor:default;font-size:13px;color:var(--muted);padding:9px 10px}
+.sugg li.sugg-msg.busy::before{content:"";display:inline-block;width:11px;height:11px;margin-right:8px;vertical-align:-1px;border:2px solid var(--line);border-top-color:var(--olive-ink);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 .one-row{display:flex;gap:8px}
 .one-row .addr-box{flex:1}
 .one-row .btn-main{width:auto;flex:none;padding:0 22px}
@@ -422,11 +425,17 @@ const OUT = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColo
 /* ============ talking to the server ============ */
 class NeedPin extends Error {}
 async function api(path, opts = {}){
-  const r = await fetch("/api/" + path, {
-    method: opts.method || "GET", credentials: "same-origin",
-    headers: opts.body ? {"content-type":"application/json"} : {},
-    body: opts.body ? JSON.stringify(opts.body) : undefined
-  });
+  const ctl = new AbortController(), cut = setTimeout(() => ctl.abort(), opts.timeout || 25000);
+  if (opts.signal) opts.signal.addEventListener("abort", () => ctl.abort(), {once:true});
+  let r;
+  try {
+    r = await fetch("/api/" + path, {
+      method: opts.method || "GET", credentials: "same-origin", signal: ctl.signal,
+      headers: opts.body ? {"content-type":"application/json"} : {},
+      body: opts.body ? JSON.stringify(opts.body) : undefined
+    });
+  } catch(e){ throw new Error(ctl.signal.aborted ? "That took too long. Check your signal and try again." : "No connection. Check your signal and try again."); }
+  finally { clearTimeout(cut); }
   if (r.status === 401 && path !== "login") { showLock(); throw new NeedPin(); }
   const data = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(data.error || "Something went wrong. Try again.");
@@ -459,14 +468,52 @@ function showNote(inp, state){
   el.textContent = {bad:"⚠ Not found", error:"Couldn't check yet"}[state] || "";   // checking happens quietly
 }
 
-// suggestions dropdown, shared by every box
-let suggFor = null, suggItems = [], suggPick = -1, suggTimer = 0, suggSeq = 0;
+/* ---- address suggestions: fast, remembered, and always showing what's going on ---- */
+// Answers are remembered on this phone, and while a new answer is on its way the list
+// narrows the last one as you type, so most keystrokes show matches instantly.
+const sugCache = new Map();
+const normQ = t => t.trim().toLowerCase().replace(/[\s,]+/g, " ");
+function quickSugg(text){
+  const q = normQ(text); if (sugCache.has(q)) return sugCache.get(q);
+  let best = ""; for (const k of sugCache.keys()) if (q.startsWith(k) && k.length > best.length) best = k;
+  if (!best) return null;
+  const words = q.split(" ");
+  return sugCache.get(best).filter(p => { const h = normQ([p.label, p.line1, p.line2].join(" ")); return words.every(w => h.includes(w)); });
+}
+// st = {timer, ctl, seq} per box group; show(items, message)
+function suggestInto(st, text, show){
+  clearTimeout(st.timer); if (st.ctl) st.ctl.abort();
+  const q = normQ(text);
+  if (q.length < 3){ show([], ""); return; }
+  const quick = quickSugg(text);
+  if (sugCache.has(q)){ show(quick, quick.length ? "" : "No matches. Keep typing, or add the city."); return; }
+  show(quick || [], quick && quick.length ? "" : "Searching…");
+  st.timer = setTimeout(async () => {
+    const seq = st.seq = (st.seq || 0) + 1, ctl = st.ctl = new AbortController();
+    try {
+      const {results} = await api("suggest?text=" + encodeURIComponent(text.trim()), {signal:ctl.signal, timeout:7000});
+      sugCache.set(q, results || []); if (sugCache.size > 300) sugCache.delete(sugCache.keys().next().value);
+      if (seq !== st.seq) return;
+      show(results || [], (results || []).length ? "" : "No matches. Keep typing, or add the city.");
+    } catch(e){
+      if (seq !== st.seq || e instanceof NeedPin) return;
+      show(quick || [], "Couldn't load suggestions. Keep typing to try again.");
+    }
+  }, 140);
+}
+const suggRow = (p, i, pick, pre) => `<li role="option" id="${pre}-${i}" aria-selected="${i === pick}" data-i="${i}"><b>${esc(p.line1 || p.label)}</b><span>${esc(p.line2 || "")}</span></li>`;
+const suggNote = msg => msg ? `<li class="sugg-msg${msg === "Searching…" ? " busy" : ""}" role="presentation">${esc(msg)}</li>` : "";
+
+// suggestions dropdown, shared by every route box
+let suggFor = null, suggItems = [], suggPick = -1, suggMsg = "";
+const suggSt = {};
 const suggEl = document.createElement("ul"); suggEl.className = "sugg"; suggEl.id = "sugg"; suggEl.setAttribute("role", "listbox"); suggEl.hidden = true;
-function closeSugg(){ suggEl.hidden = true; if (suggFor) suggFor.setAttribute("aria-expanded", "false"); suggFor = null; suggItems = []; suggPick = -1; }
+function closeSugg(){ clearTimeout(suggSt.timer); if (suggSt.ctl) suggSt.ctl.abort(); suggSt.seq = (suggSt.seq || 0) + 1;
+  suggEl.hidden = true; if (suggFor) suggFor.setAttribute("aria-expanded", "false"); suggFor = null; suggItems = []; suggPick = -1; suggMsg = ""; }
 function drawSugg(){
-  suggEl.innerHTML = suggItems.map((p, i) => `<li role="option" id="sg-${i}" aria-selected="${i === suggPick}" data-i="${i}"><b>${esc(p.line1 || p.label)}</b><span>${esc(p.line2 || "")}</span></li>`).join("");
-  suggEl.hidden = !suggItems.length;
-  if (suggFor){ suggFor.setAttribute("aria-expanded", String(!!suggItems.length)); suggFor.setAttribute("aria-controls", "sugg"); }
+  suggEl.innerHTML = suggItems.map((p, i) => suggRow(p, i, suggPick, "sg")).join("") + suggNote(suggMsg);
+  suggEl.hidden = !suggItems.length && !suggMsg;
+  if (suggFor){ suggFor.setAttribute("aria-expanded", String(!suggEl.hidden)); suggFor.setAttribute("aria-controls", "sugg"); }
 }
 function choose(i){
   const inp = suggFor, p = suggItems[i]; if (!inp || !p) return;
@@ -483,18 +530,12 @@ function wireBox(inp){
     setPlace(inp, null); showNote(inp, "");
     inp.closest("li")?.classList.toggle("filled", !!inp.value.trim());
     refreshPlanButton(); markStale(); saveDraft();
-    clearTimeout(suggTimer);
-    const text = inp.value.trim();
-    if (text.length < 3){ closeSugg(); return; }
-    suggTimer = setTimeout(async () => {
-      const seq = ++suggSeq;
-      try {
-        const {results} = await api("suggest?text=" + encodeURIComponent(text));
-        if (seq !== suggSeq || document.activeElement !== inp) return;
-        suggFor = inp; suggItems = results || []; suggPick = -1;
-        inp.parentElement.appendChild(suggEl); drawSugg();
-      } catch(e){ if (!(e instanceof NeedPin)) closeSugg(); }
-    }, 250);
+    if (inp.value.trim().length < 3){ closeSugg(); return; }
+    suggestInto(suggSt, inp.value, (items, msg) => {
+      if (document.activeElement !== inp) return;
+      if (suggFor !== inp){ suggFor = inp; inp.parentElement.appendChild(suggEl); }
+      suggItems = items; suggMsg = msg; suggPick = items.length ? Math.min(suggPick, items.length - 1) : -1; drawSugg();
+    });
   });
   inp.addEventListener("keydown", e => {
     if (!suggEl.hidden && suggFor === inp){
@@ -838,13 +879,14 @@ function bury(ids){                       // remove, leaving a small marker so o
 const oneIn = $("one-in"), oneList = document.createElement("ul");
 oneList.className = "sugg"; oneList.id = "one-sugg"; oneList.setAttribute("role", "listbox"); oneList.hidden = true;
 oneIn.parentElement.appendChild(oneList);
-let oneItems = [], onePick = -1, oneTimer = 0, oneSeq = 0, oneBusy = false;
+let oneItems = [], onePick = -1, oneMsg = "", oneBusy = false;
+const oneSt = {};
 function drawOne(){
-  oneList.innerHTML = oneItems.map((p, i) => `<li role="option" id="one-${i}" data-i="${i}" aria-selected="${i === onePick}"><b>${esc(p.line1 || p.label)}</b><span>${esc(p.line2 || "")}</span></li>`).join("");
-  oneList.hidden = !oneItems.length; oneIn.setAttribute("aria-expanded", String(!!oneItems.length));
+  oneList.innerHTML = oneItems.map((p, i) => suggRow(p, i, onePick, "one")).join("") + suggNote(oneMsg);
+  oneList.hidden = !oneItems.length && !oneMsg; oneIn.setAttribute("aria-expanded", String(!oneList.hidden));
   if (onePick >= 0) oneIn.setAttribute("aria-activedescendant", "one-" + onePick); else oneIn.removeAttribute("aria-activedescendant");
 }
-function closeOne(){ oneItems = []; onePick = -1; drawOne(); }
+function closeOne(){ clearTimeout(oneSt.timer); if (oneSt.ctl) oneSt.ctl.abort(); oneSt.seq = (oneSt.seq || 0) + 1; oneItems = []; onePick = -1; oneMsg = ""; drawOne(); }
 function addOne(p, typed){
   const label = p.label, dupe = live().find(c => [nameOf(c), c.text].some(t => t && t.toLowerCase() === label.toLowerCase()));
   closeOne();
@@ -875,14 +917,14 @@ async function addTyped(){                 // Add / Enter without picking a sugg
   finally { oneBusy = false; $("one-go").disabled = false; }
 }
 oneIn.addEventListener("input", () => {
-  clearTimeout(oneTimer); const text = oneIn.value.trim(); bstatus("");
-  if (text.length < 3){ closeOne(); return; }
-  oneTimer = setTimeout(async () => {
-    const seq = ++oneSeq;
-    try { const {results} = await api("suggest?text=" + encodeURIComponent(text)); if (seq !== oneSeq || oneIn.value.trim() !== text) return; oneItems = results || []; onePick = -1; drawOne(); }
-    catch(e){ closeOne(); }
-  }, 220);
+  bstatus("");
+  if (oneIn.value.trim().length < 3){ closeOne(); return; }
+  suggestInto(oneSt, oneIn.value, (items, msg) => {
+    if (document.activeElement !== oneIn) return;
+    oneItems = items; oneMsg = msg; onePick = items.length ? Math.min(onePick, items.length - 1) : -1; drawOne();
+  });
 });
+oneIn.addEventListener("focus", () => { if (oneIn.value.trim().length >= 3) oneIn.dispatchEvent(new Event("input")); });
 oneIn.addEventListener("keydown", e => {
   if (e.key === "ArrowDown" && oneItems.length){ e.preventDefault(); onePick = Math.min(oneItems.length - 1, onePick + 1); drawOne(); }
   else if (e.key === "ArrowUp" && oneItems.length){ e.preventDefault(); onePick = Math.max(0, onePick - 1); drawOne(); }
