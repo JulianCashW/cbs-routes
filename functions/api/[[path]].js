@@ -38,7 +38,8 @@ async function ensureTables(db) {
   if (tablesReady) return;
   await db.batch([
     db.prepare("CREATE TABLE IF NOT EXISTS days (day TEXT PRIMARY KEY, data TEXT NOT NULL, updated INTEGER NOT NULL)"),
-    db.prepare("CREATE TABLE IF NOT EXISTS marks (day TEXT NOT NULL, job TEXT NOT NULL, at INTEGER NOT NULL, PRIMARY KEY (day, job))")
+    db.prepare("CREATE TABLE IF NOT EXISTS marks (day TEXT NOT NULL, job TEXT NOT NULL, at INTEGER NOT NULL, PRIMARY KEY (day, job))"),
+    db.prepare("CREATE TABLE IF NOT EXISTS customers (k INTEGER PRIMARY KEY, data TEXT NOT NULL, updated INTEGER NOT NULL)")
   ]);
   tablesReady = true;
 }
@@ -173,6 +174,38 @@ async function mark(request, url, env) {
   return json({ ok: true });
 }
 
+/* ---------------- customer list (backup, shared by every phone) ---------------- */
+// Each customer carries "mod" (when it last changed). Merging keeps the newest copy of each,
+// so two phones editing different customers never undo each other. Removed customers stay as
+// small "del" markers for 60 days so the removal reaches every phone.
+function mergeCustomers(a, b) {
+  const byId = new Map();
+  for (const c of [...a, ...b]) {
+    if (!c || typeof c.id !== "string") continue;
+    const cur = byId.get(c.id);
+    if (!cur || (c.mod || 0) > (cur.mod || 0)) byId.set(c.id, c);
+  }
+  const cutoff = Date.now() - 60 * 864e5;
+  return [...byId.values()].filter(c => !(c.del && (c.mod || 0) < cutoff)).sort((x, y) => (x.born || 0) - (y.born || 0));
+}
+async function readCustomers(env) {
+  await ensureTables(env.DB);
+  const row = await env.DB.prepare("SELECT data, updated FROM customers WHERE k = 1").first();
+  return { list: row ? JSON.parse(row.data) : [], updated: row ? row.updated : 0 };
+}
+async function getCustomers(env) { return json(await readCustomers(env)); }
+async function saveCustomers(request, env) {
+  const body = await request.json().catch(() => null);
+  if (!body || !Array.isArray(body.list) || body.list.length > 10000) return fail(400, "Bad customer list");
+  const now = await readCustomers(env);
+  const list = mergeCustomers(now.list, body.list);
+  const data = JSON.stringify(list);
+  if (data.length > 1800000) return fail(413, "Customer list is too large to back up");
+  const updated = Date.now();
+  await env.DB.prepare("INSERT INTO customers (k, data, updated) VALUES (1, ?, ?) ON CONFLICT(k) DO UPDATE SET data = excluded.data, updated = excluded.updated").bind(data, updated).run();
+  return json({ list, updated });
+}
+
 /* ---------------- entry point ---------------- */
 export async function onRequest({ request, env }) {
   const url = new URL(request.url);
@@ -197,6 +230,8 @@ export async function onRequest({ request, env }) {
     if (path === "day" && method === "PUT") return await saveDay(request, url, env);
     if (path === "day" && method === "DELETE") return await clearDay(url, env);
     if (path === "mark" && method === "POST") return await mark(request, url, env);
+    if (path === "customers" && method === "GET") return await getCustomers(env);
+    if (path === "customers" && method === "PUT") return await saveCustomers(request, env);
     return fail(404, "Not found");
   } catch (e) {
     return fail(500, "Something went wrong on the server. Try again.");

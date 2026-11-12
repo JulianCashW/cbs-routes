@@ -170,10 +170,38 @@ textarea{width:100%;min-height:150px;font:inherit;font-size:16px;line-height:1.4
 .b-ic:hover{background:var(--soft);color:var(--ink)}
 .b-ic.on{color:var(--gold)}
 .b-ic.on svg{fill:currentColor}
-.b-editor{flex:1 1 100%;display:flex;flex-wrap:wrap;gap:8px;padding:6px 0 4px 30px}
-.b-editor input{flex:1 1 100%;width:100%;height:auto;margin:0;font-size:16px;background:var(--field);border:1px solid var(--accent-edge);border-radius:10px;padding:9px 12px}
+.b-editor{flex:1 1 100%;display:grid;gap:12px;padding:10px 0 6px 30px;cursor:auto}
+.b-editor .f{display:grid;gap:5px;font-size:13px;font-weight:700;color:var(--ink);border:0;margin:0;padding:0;min-width:0}
+.b-editor legend{padding:0;margin:0 0 5px}
+.b-editor input[type=text],.b-editor input[type=date],.b-editor textarea,.b-editor select{width:100%;min-height:0;margin:0;font:inherit;font-size:16px;font-weight:400;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+.b-editor textarea{min-height:64px;resize:vertical}
+.b-editor input:focus,.b-editor textarea:focus,.b-editor select:focus{border-color:var(--accent-edge)}
+.b-days{display:flex;flex-wrap:wrap;gap:6px}
+.b-editor .b-day{position:relative;display:inline-block;flex:none;cursor:pointer}
+.b-day input{position:absolute;opacity:0;width:1px;height:1px}
+.b-day span{display:inline-block;min-width:46px;text-align:center;padding:6px 10px;border:1px solid var(--line);border-radius:999px;font-size:13px;font-weight:600;background:var(--field);cursor:pointer}
+.b-day input:checked + span{background:var(--accent);border-color:var(--accent-edge);color:var(--on-accent)}
+.b-day input:focus-visible + span{outline:3px solid var(--accent-edge);outline-offset:2px}
+.b-visits{display:flex;flex-wrap:wrap;gap:6px;max-height:120px;overflow:auto;margin-bottom:8px}
+.b-visit{display:inline-flex;align-items:center;gap:2px;background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:2px 2px 2px 10px;font-size:13px;font-weight:600}
+.b-visit button{appearance:none;border:0;background:transparent;color:var(--muted);width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:16px;line-height:1}
+.b-visit button:hover{background:var(--line);color:var(--ink)}
+.b-hint{margin:0 0 8px;font-size:13px;font-weight:400;color:var(--muted)}
+.b-addvisit{display:flex;gap:8px}
+.b-addvisit input{flex:1;min-width:0}
+.b-ed-btns{display:flex;gap:8px}
 .b-editor .btn{padding:9px 16px;font-size:14px}
-.b-editor .btn-main{width:auto;min-height:0}
+.b-editor .btn-main{width:auto;min-height:0;padding:9px 22px}
+.b-meta{display:flex;flex-wrap:wrap;gap:2px 8px;font-size:12px;color:var(--muted);margin-top:3px}
+.b-due{font-weight:700;color:#7a3f0c;background:#f5dfc7;border-radius:6px;padding:0 6px}
+.b-next{font-weight:600;color:var(--olive-ink)}
+.b-note{font-size:12.5px;color:var(--muted);font-style:italic;margin-top:2px;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.b-tools select{font-size:14px;padding:8px 10px;border-radius:999px}
+.b-sync{margin:10px 0 0;font-size:13px;color:var(--muted)}
+.b-sync:empty{display:none}
+.star-tag{color:var(--gold)}
+.stop-note{font-size:13px;color:var(--muted);font-style:italic;margin-top:2px;overflow-wrap:anywhere}
+.stops > li.prem .num{background:var(--gold);color:#fff}
 .b-filter{appearance:none;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:14px;font-weight:600;padding:8px 12px;border-radius:999px;cursor:pointer;white-space:nowrap}
 .b-filter[aria-pressed="true"]{background:var(--gold-soft);border-color:var(--gold);color:var(--ink)}
 .b-empty{padding:14px 12px;color:var(--muted);font-size:14px}
@@ -244,12 +272,15 @@ textarea{width:100%;min-height:150px;font:inherit;font-size:16px;line-height:1.4
       </div>
       <div id="bulk-index" hidden>
         <div class="b-tools">
-          <input type="search" id="bulk-find" placeholder="Search names or addresses" aria-label="Search names or addresses" autocomplete="off">
+          <input type="search" id="bulk-find" placeholder="Search names, addresses or notes" aria-label="Search names, addresses or notes" autocomplete="off">
           <button class="b-filter" id="bulk-stars" type="button" aria-pressed="false">★ Premium</button>
+          <button class="b-filter" id="bulk-due" type="button" aria-pressed="false">Due</button>
+          <select id="bulk-day" aria-label="Service day"><option value="">Any day</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option></select>
           <button class="btn-link" id="bulk-all" type="button">Select all</button>
         </div>
         <ol class="b-list" id="bulk-list" aria-label="Address index"></ol>
         <div id="bulk-bad"></div>
+        <p class="b-sync" id="bulk-sync" aria-live="polite"></p>
         <div class="row-btns"><button class="btn btn-line" id="bulk-clear" type="button">Clear the whole list</button></div>
       </div>
     </section>
@@ -346,7 +377,7 @@ function showApp(){ $("lock").hidden = true; $("app").hidden = false; $("signout
 $("lock-form").addEventListener("submit", async e => {
   e.preventDefault();
   const s = $("pin-status"); s.className = "status"; s.textContent = "Checking…"; $("pin-go").disabled = true;
-  try { await api("login", {method:"POST", body:{pin:$("pin").value}}); $("pin").value = ""; s.textContent = ""; showApp(); await loadDay(true); startSync(); renderBulk(false); }
+  try { await api("login", {method:"POST", body:{pin:$("pin").value}}); $("pin").value = ""; s.textContent = ""; showApp(); await loadDay(true); startSync(); renderBulk(false); syncCust(); }
   catch(err){ s.className = "status err"; s.textContent = err.message === "Wrong PIN" ? "That PIN didn't work. Try again." : err.message; }
   finally { $("pin-go").disabled = false; }
 });
@@ -355,10 +386,10 @@ $("signout").addEventListener("click", async () => { try { await api("logout", {
 /* ============ address boxes ============ */
 // Each box remembers the place picked for it in its dataset (lat, lon, street, label).
 function setPlace(inp, p){
-  if (p){ Object.assign(inp.dataset, {lat:p.lat, lon:p.lon, street:p.street || "", label:p.label}); }
-  else { delete inp.dataset.lat; delete inp.dataset.lon; delete inp.dataset.street; delete inp.dataset.label; }
+  if (p){ Object.assign(inp.dataset, {lat:p.lat, lon:p.lon, street:p.street || "", label:p.label}); if (p.cust) inp.dataset.cust = p.cust; else delete inp.dataset.cust; }
+  else { delete inp.dataset.lat; delete inp.dataset.lon; delete inp.dataset.street; delete inp.dataset.label; delete inp.dataset.cust; }
 }
-const placeOf = inp => inp.dataset.lat ? {lat:+inp.dataset.lat, lon:+inp.dataset.lon, street:inp.dataset.street, label:inp.dataset.label} : null;
+const placeOf = inp => inp.dataset.lat ? {lat:+inp.dataset.lat, lon:+inp.dataset.lon, street:inp.dataset.street, label:inp.dataset.label, ...(inp.dataset.cust ? {cust:inp.dataset.cust} : {})} : null;
 const noteFor = inp => inp.id === "start" ? $("start-note") : inp.closest("li").querySelector(".note");
 function showNote(inp, state){
   const el = noteFor(inp);
@@ -504,7 +535,8 @@ async function plan(){
     const seen = {};
     const jobs = filled.map((b, i) => {
       const p = places[i+1], base = key(b.value) || "job"; seen[base] = (seen[base] || 0) + 1;
-      return {id: seen[base] > 1 ? base + "-" + seen[base] : base, label:b.value.trim(), lat:p.lat, lon:p.lon, street:p.street || ""};
+      const label = b.value.trim(), c = findC(p.cust) || live().find(x => x.lat != null && [nameOf(x), x.text].some(t => t && t.toLowerCase() === label.toLowerCase()));
+      return {id: seen[base] > 1 ? base + "-" + seen[base] : base, label, lat:p.lat, lon:p.lon, street:p.street || "", ...(c ? {cust:c.id} : {})};
     });
     const res = await api("plan", {method:"POST", body:{start, jobs, home:$("home").checked, tolls:$("tolls").checked}});
     const next = {start, jobs, home:$("home").checked, tolls:$("tolls").checked, order:res.order.map(i => jobs[i].id), missed:(res.missed || []).map(i => jobs[i].id), line:res.line || []};
@@ -526,6 +558,12 @@ function emptyState(){
 }
 const streetOf = j => j.street || (String(j.label).split(",").map(x => x.trim()).find(x => /^\d+\s/.test(x)) || j.label).replace(/^\d+[a-z]?\s+/i, "");
 
+// a stop's heading: the customer's name (and star) when it came from the customer book, then address and notes
+function stopText(j){
+  const c = findC(j.cust), star = c && c.star ? ' <span class="star-tag" aria-label="Premium">★</span>' : "";
+  const head = c && c.name ? `<div class="addr">${esc(c.name)}${star}</div><div class="sub">${esc(j.label)}</div>` : `<div class="addr">${esc(j.label)}${star}</div>`;
+  return head + (c && c.notes ? `<div class="stop-note">${esc(c.notes)}</div>` : "");
+}
 function showRoute(){
   if (!route){ emptyState(); return; }
   const byId = Object.fromEntries(route.jobs.map(j => [j.id, j]));
@@ -549,10 +587,10 @@ function showRoute(){
      <div class="actions">${links}</div>
      <div class="map" id="map" role="img" aria-label="Map of today's route"></div>
      <p class="credit">Addresses and routes by <a href="https://www.geoapify.com/" target="_blank" rel="noopener">Geoapify</a></p>
-     <ol class="glance" aria-label="Route by street">${row("g-home","","HQ","Start")}${stops.map((j, i) => row("", ` data-id="${esc(j.id)}"`, esc(streetOf(j)), "Stop " + (i+1))).join("")}${endsHome ? row("g-home","","HQ","End") : ""}</ol>
+     <ol class="glance" aria-label="Route by street">${row("g-home","","HQ","Start")}${stops.map((j, i) => row("", ` data-id="${esc(j.id)}"`, esc(streetOf(j)) + (findC(j.cust)?.star ? ' <span class="star-tag" aria-label="Premium">★</span>' : ""), "Stop " + (i+1))).join("")}${endsHome ? row("g-home","","HQ","End") : ""}</ol>
      <p class="from">${HOUSE}<span>Leaving from <b>${esc(route.start.label)}</b></span></p>
      <ol class="stops">${stops.map((j, i) =>
-        `<li data-id="${esc(j.id)}"><div class="num">${i+1}</div><div><div class="addr">${esc(j.label)}</div>` +
+        `<li data-id="${esc(j.id)}"${findC(j.cust)?.star ? ' class="prem"' : ""}><div class="num">${i+1}</div><div>${stopText(j)}` +
         `<label class="done-box"><input type="checkbox" id="done-${i+1}" data-id="${esc(j.id)}"> Job done</label></div>${waze(j, "stop " + (i+1))}</li>`).join("")}
        ${endsHome ? `<li><div class="home-ic">${HOUSE}</div><div><div class="addr">Head back to HQ</div><div class="sub">${esc(route.start.label)}</div></div>${waze(route.start, "HQ")}</li>` : ""}
      </ol>
@@ -578,6 +616,7 @@ function applyDone(){
 }
 async function toggleDone(id, on){
   on ? done.add(id) : done.delete(id); applyDone(); saveMine();
+  const job = route && route.jobs.find(j => j.id === id); if (job && job.cust) logVisit(job.cust, on);
 }
 
 /* ============ real map ============ */
@@ -639,31 +678,102 @@ function showTab(t){
 $("tab-planner").addEventListener("click", () => showTab("planner"));
 $("tab-bulk").addEventListener("click", () => showTab("bulk"));
 
-/* ============ address map ============ */
-// Paste lots of addresses, see them as numbered pins, pick some and send them to the route planner.
-// Kept on this phone until cleared.
-let bulk = [], picked = new Set(), bmap = null, bmarks = [], bulkBusy = false;
-try { bulk = JSON.parse(localStorage.getItem("cbs-bulk") || "[]") || []; } catch(e){ bulk = []; }
-function saveBulk(){ try { localStorage.setItem("cbs-bulk", JSON.stringify(bulk)); } catch(e){} }
-const onMap = () => bulk.filter(b => b.lat != null);
-const nameOf = b => b.label || b.text;
+/* ============ address map: the customer book ============ */
+// Paste lots of addresses, see them as numbered pins, keep name / notes / schedule / visits for each,
+// and send picks to the route planner. Backed up to the site's database and shared by every phone.
+// Each customer: {id, born, mod, text, label, lat, lon, street, name, notes, star, freq, days:[0-6], hist:["YYYY-MM-DD"], bad, del}
+let cust = [], picked = new Set(), sentIds = new Set(), bmap = null, bmarks = [], bulkBusy = false;
+let editing = null, draft = null, focusEditor = false;
+const DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"], WEEK = [1,2,3,4,5,6,0];
+const FREQS = [[0,"No schedule"],[7,"Every week"],[14,"Every 2 weeks"],[21,"Every 3 weeks"],[28,"Every 4 weeks"],[30,"Every month"]];
+const FREQ_SHORT = {7:"Weekly",14:"Every 2 wks",21:"Every 3 wks",28:"Every 4 wks",30:"Monthly"};
 const IC = {
   star:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>',
   edit:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>',
   show:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.6-6-11a6 6 0 0 1 12 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg>'
 };
-let editing = null, editDraft = "";   // the row whose name is being typed, and what's typed so far
+const live = () => cust.filter(c => !c.del);
+const onMap = () => live().filter(c => c.lat != null);
+const findC = id => id ? cust.find(c => c.id === id && !c.del) : null;
+const nameOf = c => c.label || c.text;
+const touch = c => { c.mod = Date.now(); };
 const bstatus = (text, err) => { const s = $("bulk-status"); s.textContent = text; s.className = "status" + (err ? " err" : ""); };
 
+// dates are plain "YYYY-MM-DD" in local time
+const dayObj = s => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+const dayStr = d => d.toLocaleDateString("en-CA");
+const addDays = (s, n) => { const d = dayObj(s); d.setDate(d.getDate() + n); return dayStr(d); };
+const daysFrom = (a, b) => Math.round((dayObj(b) - dayObj(a)) / 864e5);
+const fmtDay = s => { const d = dayObj(s); return d.toLocaleDateString("en-US", d.getFullYear() === new Date().getFullYear() ? {month:"short", day:"numeric"} : {month:"short", day:"numeric", year:"numeric"}); };
+function dueOf(c){                       // null when there's no schedule
+  if (!c.freq) return null;
+  const last = (c.hist || [])[0];
+  if (!last) return {due:true, text:"Due"};
+  const next = addDays(last, c.freq), wait = daysFrom(today(), next);
+  return wait <= 0 ? {due:true, text: wait < 0 ? "Overdue" : "Due today"} : {due:false, text:"Next " + fmtDay(next)};
+}
+
+/* ---- saving: this phone first, then the backup ---- */
+function mergeLists(a, b){
+  const byId = new Map();
+  for (const c of [...a, ...b]){ if (!c || !c.id) continue; const cur = byId.get(c.id); if (!cur || (c.mod || 0) > (cur.mod || 0)) byId.set(c.id, c); }
+  return [...byId.values()].sort((x, y) => (x.born || 0) - (y.born || 0));
+}
+function storeLocal(){ try { localStorage.setItem("cbs-cust", JSON.stringify(cust)); localStorage.setItem("cbs-sent", JSON.stringify([...sentIds])); } catch(e){} }
+let dirty = false, syncTimer2 = 0, syncing = false, syncAgain = false, lastSyncOk = null;
+function saveCust(){ storeLocal(); dirty = true; clearTimeout(syncTimer2); syncTimer2 = setTimeout(syncCust, 1200); showSync(); }
+function showSync(){
+  const el = $("bulk-sync"); if (!el) return;
+  el.textContent = !live().length ? "" : dirty || syncing ? "Saving…" : lastSyncOk === false ? "⚠ Not backed up yet. It will retry when you have signal." : lastSyncOk ? "✓ Backed up" : "";
+}
+async function syncCust(){
+  if (syncing){ syncAgain = true; return; }
+  syncing = true; const sending = dirty; dirty = false; showSync();
+  try {
+    const r = sending ? await api("customers", {method:"PUT", body:{list:cust}}) : await api("customers");
+    const remote = r.list || [], before = JSON.stringify(cust);
+    cust = mergeLists(cust, remote);
+    // anything here that the backup doesn't have yet (or has older) still needs sending
+    const rm = new Map(remote.map(c => [c.id, c.mod || 0]));
+    if (cust.some(c => !rm.has(c.id) || (c.mod || 0) > rm.get(c.id))) dirty = true;
+    lastSyncOk = true; storeLocal();
+    if (JSON.stringify(cust) !== before){ if (editing) needsRender = true; else renderBulk(false); if (route) showRoute(); }
+  } catch(e){ if (sending) dirty = true; if (!(e instanceof NeedPin)) lastSyncOk = false; }
+  finally {
+    syncing = false; showSync();
+    if (syncAgain || (dirty && lastSyncOk)){ syncAgain = false; clearTimeout(syncTimer2); syncTimer2 = setTimeout(syncCust, 1200); }
+  }
+}
+let needsRender = false;
+setInterval(() => { if (document.visibilityState === "visible" && !$("app").hidden) syncCust(); }, 60000);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && !$("app").hidden) syncCust(); });
+
+// load this phone's copy (and move over the older "cbs-bulk" list from before backups)
+try {
+  const saved = JSON.parse(localStorage.getItem("cbs-cust") || "null");
+  sentIds = new Set(JSON.parse(localStorage.getItem("cbs-sent") || "[]"));
+  if (saved) cust = saved;
+  else {
+    const old = JSON.parse(localStorage.getItem("cbs-bulk") || "[]") || [];
+    cust = old.map((b, i) => {
+      const [st, n] = String(b.id).split("-"), c = {...b, born:(parseInt(st, 36) || Date.now()) + (+n || i), mod:1};
+      if (c.sent) sentIds.add(c.id);
+      delete c.sent; delete c.group; return c;
+    });
+    if (cust.length) dirty = true;
+  }
+} catch(e){ cust = []; }
+
+/* ---- adding addresses ---- */
 async function putOnMap(){
   if (bulkBusy) return;
-  const raw = $("bulk-in").value, have = new Set(bulk.map(b => b.text.toLowerCase()));
+  const raw = $("bulk-in").value, have = new Set(live().map(c => c.text.toLowerCase()));
   const lines = raw.split(/\n+/).map(s => s.trim()).filter(Boolean).filter(s => { const k = s.toLowerCase(); if (have.has(k)) return false; have.add(k); return true; });
   if (!lines.length){ bstatus(raw.trim() ? "Those addresses are already on the map." : "Paste some addresses first, one per line.", true); return; }
   if (lines.length > 300){ bstatus("That's more than 300 at once. Paste them in smaller batches.", true); return; }
-  const stamp = Date.now().toString(36);
-  const items = lines.map((text, i) => ({id:stamp + "-" + i, text}));
-  bulk.push(...items);
+  const now = Date.now(), stamp = now.toString(36);
+  const items = lines.map((text, i) => ({id:stamp + "-" + i, born:now + i, mod:now, text}));
+  cust.push(...items);
   const go = $("bulk-go"); bulkBusy = true; go.disabled = true; go.textContent = `Finding 0 of ${items.length}…`; bstatus("");
   let n = 0; const queue = [...items];
   const worker = async () => {
@@ -678,41 +788,73 @@ async function putOnMap(){
   };
   try { await Promise.all([1,2,3,4].map(worker)); }
   finally { bulkBusy = false; go.disabled = false; go.textContent = "Put on map"; }
-  items.forEach(it => { if (it.lat == null) it.bad = true; });
-  $("bulk-in").value = ""; saveBulk();
+  items.forEach(it => { if (it.lat == null) it.bad = true; touch(it); });
+  $("bulk-in").value = ""; saveCust();
   const bad = items.filter(i => i.bad).length, good = items.length - bad;
   bstatus(`Added ${good} to the map.` + (bad ? ` ${bad} couldn't be found.` : ""), false);
   renderBulk(true);
 }
+function bury(ids){                       // remove, leaving a small marker so other phones remove it too
+  const now = Date.now();
+  cust = cust.map(c => ids.has(c.id) && !c.del ? {id:c.id, born:c.born, mod:now, del:true} : c);
+  ids.forEach(id => { picked.delete(id); sentIds.delete(id); });
+  saveCust(); renderBulk(false);
+}
 
-// the index: numbered to match the pins
+/* ---- filters ---- */
+const pressed = id => $(id).getAttribute("aria-pressed") === "true";
+function passes(c){
+  const day = $("bulk-day").value;
+  return (!pressed("bulk-stars") || c.star) && (!pressed("bulk-due") || (dueOf(c) || {}).due) && (day === "" || (c.days || []).includes(+day));
+}
+
+/* ---- the index: numbered to match the pins ---- */
 function renderList(){
-  const ok = onMap(), bad = bulk.filter(b => b.bad), q = $("bulk-find").value.trim().toLowerCase();
+  needsRender = false;
+  const ok = onMap(), bad = live().filter(c => c.bad), q = $("bulk-find").value.trim().toLowerCase();
   $("bulk-count").textContent = ok.length ? `${ok.length} on map` : "";
-  $("bulk-index").hidden = !bulk.length;
+  $("bulk-index").hidden = !live().length;
   $("bulk").classList.toggle("has-pins", !!ok.length);
-  const starsOnly = $("bulk-stars").getAttribute("aria-pressed") === "true";
-  const shown = ok.map((b, i) => ({b, n:i+1})).filter(({b}) => (!starsOnly || b.star) &&
-    (!q || [b.name, nameOf(b), b.text].some(t => t && t.toLowerCase().includes(q))));
-  $("bulk-list").innerHTML = shown.length ? shown.map(({b, n}) => {
-    const id = esc(b.id), main = `<label><input type="checkbox" data-id="${id}"><span class="b-num">${n}</span><span class="b-text">${b.name ? `<span class="b-name">${esc(b.name)}</span>` : ""}<span class="b-addr">${esc(nameOf(b))}</span></span></label>`;
-    const editor = editing === b.id
-      ? `<form class="b-editor" data-name="${id}"><input type="text" value="${esc(editDraft)}" maxlength="80" placeholder="Customer name" aria-label="Name for ${esc(nameOf(b))}" autocomplete="off" enterkeyhint="done">` +
-        `<button class="btn btn-main" type="submit">Save</button><button class="btn btn-line" type="button" data-cancel>Cancel</button></form>` : "";
-    return `<li class="b-row${b.sent ? " sent" : ""}${b.star ? " star" : ""}" data-id="${id}">${main}${b.sent ? "<small>On route</small>" : ""}<div class="b-acts">` +
-      `<button class="b-ic${b.star ? " on" : ""}" type="button" data-star="${id}" aria-pressed="${!!b.star}" aria-label="Premium" title="Premium">${IC.star}</button>` +
-      `<button class="b-ic" type="button" data-edit="${id}" aria-label="${b.name ? "Edit name" : "Add a name"}" title="${b.name ? "Edit name" : "Add a name"}">${IC.edit}</button>` +
-      `<button class="b-ic" type="button" data-show="${id}" aria-label="Show ${n} on the map" title="Show on map">${IC.show}</button></div>${editor}</li>`;
-  }).join("")
-    : `<li class="b-empty">${!ok.length ? "None of these were found yet." : starsOnly && !ok.some(b => b.star) ? "No premium addresses yet. Tap the star on a row to mark one." : "Nothing matches that search."}</li>`;
-  const ed = $("bulk-list").querySelector(".b-editor input");
-  if (ed && document.activeElement !== $("bulk-find")){ ed.focus({preventScroll:true}); ed.setSelectionRange(ed.value.length, ed.value.length); }
+  const shown = ok.map((c, i) => ({c, n:i+1})).filter(({c}) => passes(c) &&
+    (!q || [c.name, nameOf(c), c.text, c.notes].some(t => t && t.toLowerCase().includes(q))));
+  $("bulk-list").innerHTML = shown.length ? shown.map(({c, n}) => row(c, n)).join("")
+    : `<li class="b-empty">${!ok.length ? "None of these were found yet." : "No customers match these filters."}</li>`;
+  if (focusEditor){ focusEditor = false; const f = $("bulk-list").querySelector(".b-editor [name=name]"); if (f){ f.focus({preventScroll:true}); f.setSelectionRange(f.value.length, f.value.length); } }
   $("bulk-bad").innerHTML = bad.length ? `<div class="b-bad"><div class="b-bad-h"><b>⚠ Not found (${bad.length})</b><button class="btn-link" type="button" id="bulk-dropbad">Remove these</button></div>` +
-    `<ul>${bad.map(b => `<li>${esc(b.text)}</li>`).join("")}</ul></div>` : "";
-  updatePicks();
+    `<ul>${bad.map(c => `<li>${esc(c.text)}</li>`).join("")}</ul></div>` : "";
+  updatePicks(); showSync();
+}
+function row(c, n){
+  const id = esc(c.id), due = dueOf(c), sent = sentIds.has(c.id), last = (c.hist || [])[0];
+  const meta = [c.freq ? FREQ_SHORT[c.freq] || `Every ${c.freq} days` : "", (c.days || []).length ? WEEK.filter(d => c.days.includes(d)).map(d => DAY_NAMES[d]).join(", ") : "",
+    last ? "Last " + fmtDay(last) : ""].filter(Boolean).map(t => `<span>${esc(t)}</span>`).join("");
+  const dueTag = due ? `<span class="${due.due ? "b-due" : "b-next"}">${esc(due.text)}</span>` : "";
+  return `<li class="b-row${sent ? " sent" : ""}${c.star ? " star" : ""}" data-id="${id}"><label><input type="checkbox" data-id="${id}"><span class="b-num">${n}</span>` +
+    `<span class="b-text">${c.name ? `<span class="b-name">${esc(c.name)}</span>` : ""}<span class="b-addr">${esc(nameOf(c))}</span>` +
+    `${meta || dueTag ? `<span class="b-meta">${dueTag}${meta}</span>` : ""}${c.notes ? `<span class="b-note">${esc(c.notes)}</span>` : ""}</span></label>` +
+    `${sent ? "<small>On route</small>" : ""}<div class="b-acts">` +
+    `<button class="b-ic${c.star ? " on" : ""}" type="button" data-star="${id}" aria-pressed="${!!c.star}" aria-label="Premium" title="Premium">${IC.star}</button>` +
+    `<button class="b-ic" type="button" data-edit="${id}" aria-label="Edit customer" title="Edit customer">${IC.edit}</button>` +
+    `<button class="b-ic" type="button" data-show="${id}" aria-label="Show ${n} on the map" title="Show on map">${IC.show}</button></div>` +
+    `${editing === c.id ? editor(c) : ""}</li>`;
+}
+function editor(c){
+  const d = draft, id = esc(c.id);
+  return `<form class="b-editor" data-for="${id}" autocomplete="off">
+    <label class="f">Name<input type="text" name="name" maxlength="80" value="${esc(d.name)}" placeholder="Customer name" enterkeyhint="next"></label>
+    <label class="f">Notes<textarea name="notes" rows="2" maxlength="500" placeholder="Gate code, dog in yard, mow height…">${esc(d.notes)}</textarea></label>
+    <label class="f">How often<select name="freq">${FREQS.map(([v, t]) => `<option value="${v}"${+d.freq === v ? " selected" : ""}>${t}</option>`).join("")}</select></label>
+    <fieldset class="f"><legend>Service days</legend><div class="b-days">${WEEK.map(n => `<label class="b-day"><input type="checkbox" name="day" value="${n}"${d.days.includes(n) ? " checked" : ""}><span>${DAY_NAMES[n]}</span></label>`).join("")}</div></fieldset>
+    <fieldset class="f"><legend>Visits${d.hist.length ? ` · ${d.hist.length}` : ""}</legend>
+      ${d.hist.length ? `<div class="b-visits">${d.hist.map(h => `<span class="b-visit">${esc(fmtDay(h))}<button type="button" data-unvisit="${h}" aria-label="Remove visit on ${esc(fmtDay(h))}">×</button></span>`).join("")}</div>` : `<p class="b-hint">No visits yet. Checking "Job done" on a route adds one.</p>`}
+      <div class="b-addvisit"><input type="date" name="visit" value="${today()}" max="${today()}" aria-label="Visit date"><button class="btn btn-line" type="button" data-addvisit>Add visit</button></div>
+    </fieldset>
+    <div class="b-ed-btns"><button class="btn btn-main" type="submit">Save</button><button class="btn btn-line" type="button" data-cancel>Cancel</button></div>
+  </form>`;
 }
 function renderBulk(fit){ renderList(); drawBulkMap(fit); updatePicks(); }
 
+/* ---- map ---- */
 function drawBulkMap(fit){
   if ($("bulk").hidden && !bmap) return;               // build the map the first time the tab is opened
   if (!window.maplibregl){ window.addEventListener("load", () => drawBulkMap(fit), {once:true}); return; }
@@ -727,89 +869,129 @@ function drawBulkMap(fit){
     const hq = document.createElement("div"); hq.className = "m-hq"; hq.innerHTML = HOUSE; hq.title = "HQ";
     bmarks.push({marker:new maplibregl.Marker({element:hq}).setLngLat([hqPlace.lon, hqPlace.lat]).addTo(bmap)});
   }
-  const ok = onMap(), starsOnly = $("bulk-stars").getAttribute("aria-pressed") === "true";
-  const shown = ok.filter(b => !starsOnly || b.star);   // the Premium button hides everyone else's pins
-  ok.forEach((b, i) => {
-    if (starsOnly && !b.star) return;
+  const ok = onMap(), shown = [];
+  ok.forEach((c, i) => {
+    if (!passes(c)) return;                            // the filters hide pins too
+    shown.push(c);
     const el = document.createElement("button"); el.type = "button";
-    el.className = "b-pin" + (b.sent ? " sent" : "") + (b.star ? " star" : ""); el.textContent = i + 1;
-    el.title = (b.name ? b.name + " · " : "") + nameOf(b) + (b.star ? " · Premium" : "");
+    el.className = "b-pin" + (sentIds.has(c.id) ? " sent" : "") + (c.star ? " star" : ""); el.textContent = i + 1;
+    el.title = (c.name ? c.name + " · " : "") + nameOf(c) + (c.star ? " · Premium" : "");
     el.setAttribute("aria-label", `Select ${i + 1}, ${el.title}`);
-    el.addEventListener("click", e => { e.stopPropagation(); togglePick(b.id); });
-    bmarks.push({id:b.id, el, marker:new maplibregl.Marker({element:el}).setLngLat([b.lon, b.lat]).addTo(bmap)});
+    el.addEventListener("click", e => { e.stopPropagation(); togglePick(c.id); });
+    bmarks.push({id:c.id, el, marker:new maplibregl.Marker({element:el}).setLngLat([c.lon, c.lat]).addTo(bmap)});
   });
   if (fit && shown.length){
-    const pts = shown.map(b => [b.lon, b.lat]);
+    const pts = shown.map(c => [c.lon, c.lat]);
     bmap.fitBounds(pts.reduce((bb, p) => bb.extend(p), new maplibregl.LngLatBounds(pts[0], pts[0])), {padding:40, duration:0, maxZoom:14});
   }
 }
 
 function togglePick(id){ picked.has(id) ? picked.delete(id) : picked.add(id); updatePicks(); }
 function updatePicks(){
-  $("bulk-list").querySelectorAll(".b-row[data-id]").forEach(li => { const on = picked.has(li.dataset.id); li.classList.toggle("on", on); li.querySelector("input").checked = on; });
+  $("bulk-list").querySelectorAll(".b-row[data-id]").forEach(li => { const on = picked.has(li.dataset.id); li.classList.toggle("on", on); li.querySelector("input[data-id]").checked = on; });
   bmarks.forEach(m => m.el && m.el.classList.toggle("sel", picked.has(m.id)));
   $("bulk-sel").hidden = !picked.size;
   $("bulk-sel-n").textContent = `${picked.size} selected`;
 }
 
-// put addresses into the route planner's job boxes (empty boxes first, then new ones)
+// put customers into the route planner's job boxes (empty boxes first, then new ones)
 function addToRoute(ids){
   const taken = new Set(boxes().map(b => b.value.trim().toLowerCase()).filter(Boolean));
-  const items = ids.map(id => bulk.find(b => b.id === id)).filter(b => b && b.lat != null);
+  const items = ids.map(findC).filter(c => c && c.lat != null);
   const empties = boxes().filter(b => !b.value.trim());
   let added = 0;
-  items.forEach(b => {
-    const label = nameOf(b); b.sent = true;
+  items.forEach(c => {
+    const label = nameOf(c); sentIds.add(c.id);
     if (taken.has(label.toLowerCase())) return;
     const inp = empties.shift() || addRow();
-    inp.value = label; setPlace(inp, {lat:b.lat, lon:b.lon, street:b.street || "", label}); showNote(inp, "");
+    inp.value = label; setPlace(inp, {lat:c.lat, lon:c.lon, street:c.street || "", label, cust:c.id}); showNote(inp, "");
     taken.add(label.toLowerCase()); added++;
   });
-  picked.clear(); syncRows(); saveDraft(); saveBulk(); renderBulk(false);
+  picked.clear(); syncRows(); saveDraft(); storeLocal(); renderBulk(false);
   showTab("planner"); markStale();
-  status(added ? `Added ${added} address${added > 1 ? "es" : ""} from the address map. Tap Plan route.` : "Those addresses are already in your job list.");
+  status(added ? `Added ${added} customer${added > 1 ? "s" : ""} from the address map. Tap Plan route.` : "Those addresses are already in your job list.");
 }
 
+// a visit is logged when "Job done" is checked on a stop that came from the customer book
+function logVisit(custId, on){
+  const c = findC(custId); if (!c) return;
+  const t = today(), hist = new Set(c.hist || []);
+  if (on) hist.add(t); else hist.delete(t);
+  c.hist = [...hist].sort().reverse(); if (!c.hist.length) delete c.hist;
+  touch(c); saveCust(); if (!editing) renderList();
+}
+
+/* ---- the customer editor ---- */
+function openEditor(id){
+  const c = findC(id); if (!c) return;
+  editing = id; focusEditor = true;
+  draft = {name:c.name || "", notes:c.notes || "", freq:c.freq || 0, days:[...(c.days || [])], hist:[...(c.hist || [])]};
+  renderList();
+}
+function closeEditor(save){
+  const c = findC(editing);
+  if (c && save){
+    const name = draft.name.trim().slice(0, 80), notes = draft.notes.trim().slice(0, 500);
+    name ? c.name = name : delete c.name; notes ? c.notes = notes : delete c.notes;
+    +draft.freq ? c.freq = +draft.freq : delete c.freq;
+    draft.days.length ? c.days = [...draft.days] : delete c.days;
+    draft.hist.length ? c.hist = [...draft.hist].sort().reverse() : delete c.hist;
+    touch(c); saveCust(); drawBulkMap(false); if (route) showRoute();
+  }
+  editing = null; draft = null; renderList();
+}
+function readEditor(form){
+  draft.name = form.elements.name.value; draft.notes = form.elements.notes.value; draft.freq = +form.elements.freq.value;
+  draft.days = [...form.querySelectorAll("input[name=day]:checked")].map(i => +i.value);
+}
+
+/* ---- wiring ---- */
 $("bulk-go").addEventListener("click", putOnMap);
 $("bulk-find").addEventListener("input", renderList);
-$("bulk-all").addEventListener("click", () => {
-  $("bulk-list").querySelectorAll(".b-row[data-id]:not(.sent)").forEach(li => picked.add(li.dataset.id));
-  updatePicks();
-});
+["bulk-stars","bulk-due"].forEach(id => $(id).addEventListener("click", () => { const b = $(id); b.setAttribute("aria-pressed", String(!pressed(id))); renderList(); drawBulkMap(true); updatePicks(); }));
+$("bulk-day").addEventListener("change", () => { renderList(); drawBulkMap(true); updatePicks(); });
+$("bulk-all").addEventListener("click", () => { $("bulk-list").querySelectorAll(".b-row[data-id]:not(.sent)").forEach(li => picked.add(li.dataset.id)); updatePicks(); });
 $("bulk-addsel").addEventListener("click", () => addToRoute([...picked]));
 $("bulk-unsel").addEventListener("click", () => { picked.clear(); updatePicks(); });
-$("bulk-remove").addEventListener("click", () => { bulk = bulk.filter(b => !picked.has(b.id)); picked.clear(); saveBulk(); renderBulk(false); });
-$("bulk-list").addEventListener("change", e => { const c = e.target.closest("input[data-id]"); if (c) togglePick(c.dataset.id); });
-// names: a small form under the row. Save (or Enter) keeps it, Cancel (or Escape) drops it.
-// What's typed is remembered, so the box survives the list redrawing.
-function openName(id){ const b = bulk.find(x => x.id === id); editing = b ? id : null; editDraft = b && b.name || ""; renderList(); }
-function closeName(save){
-  const b = bulk.find(x => x.id === editing);
-  if (b && save){ const v = editDraft.trim().slice(0, 80); if (v) b.name = v; else delete b.name; saveBulk(); drawBulkMap(false); }
-  editing = null; editDraft = ""; renderList();
-}
-$("bulk-list").addEventListener("submit", e => { e.preventDefault(); closeName(true); });
-$("bulk-list").addEventListener("input", e => { if (e.target.closest(".b-editor")) editDraft = e.target.value; });
-$("bulk-list").addEventListener("keydown", e => { if (e.key === "Escape" && e.target.closest(".b-editor")) closeName(false); });
-$("bulk-stars").addEventListener("click", () => { const b = $("bulk-stars"); b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true")); renderList(); drawBulkMap(true); updatePicks(); });
+$("bulk-remove").addEventListener("click", () => bury(new Set(picked)));
+$("bulk-list").addEventListener("change", e => {
+  const c = e.target.closest("input[data-id]"); if (c){ togglePick(c.dataset.id); return; }
+  const f = e.target.closest(".b-editor"); if (f) readEditor(f);
+});
+$("bulk-list").addEventListener("input", e => { const f = e.target.closest(".b-editor"); if (f) readEditor(f); });
+$("bulk-list").addEventListener("submit", e => { e.preventDefault(); const f = e.target.closest(".b-editor"); if (f) readEditor(f); closeEditor(true); });
+$("bulk-list").addEventListener("keydown", e => {
+  if (!e.target.closest(".b-editor")) return;
+  if (e.key === "Escape") closeEditor(false);
+  if (e.key === "Enter" && e.target.name === "visit"){ e.preventDefault(); e.target.closest(".b-editor").querySelector("[data-addvisit]").click(); }
+});
 $("bulk-list").addEventListener("click", e => {
-  const st = e.target.closest("[data-star]");
-  if (st){ const b = bulk.find(x => x.id === st.dataset.star); if (b){ b.star = !b.star; if (!b.star) delete b.star; saveBulk(); renderList(); drawBulkMap(false); updatePicks(); } return; }
-  const ed = e.target.closest("[data-edit]");
-  if (ed){ editing === ed.dataset.edit ? closeName(false) : openName(ed.dataset.edit); return; }
-  if (e.target.closest("[data-cancel]")){ closeName(false); return; }
-  const s = e.target.closest("[data-show]"); if (!s || !bmap) return;
-  const b = bulk.find(x => x.id === s.dataset.show); if (!b) return;
-  bmap.flyTo({center:[b.lon, b.lat], zoom:15});
+  const t = e.target;
+  const st = t.closest("[data-star]");
+  if (st){ const c = findC(st.dataset.star); if (c){ c.star ? delete c.star : c.star = true; touch(c); saveCust(); renderList(); drawBulkMap(false); updatePicks(); if (route) showRoute(); } return; }
+  const ed = t.closest("[data-edit]");
+  if (ed){ editing === ed.dataset.edit ? closeEditor(false) : openEditor(ed.dataset.edit); return; }
+  if (t.closest("[data-cancel]")){ closeEditor(false); return; }
+  const form = t.closest(".b-editor");
+  if (form && t.closest("[data-addvisit]")){
+    readEditor(form); const v = form.elements.visit.value;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(v) && !draft.hist.includes(v)){ draft.hist = [...draft.hist, v].sort().reverse(); renderList(); }
+    return;
+  }
+  const un = t.closest("[data-unvisit]");
+  if (form && un){ readEditor(form); draft.hist = draft.hist.filter(h => h !== un.dataset.unvisit); renderList(); return; }
+  const s = t.closest("[data-show]"); if (!s || !bmap) return;
+  const c = findC(s.dataset.show); if (!c) return;
+  bmap.flyTo({center:[c.lon, c.lat], zoom:15});
   if (matchMedia("(max-width:820px)").matches) $("bulk-map").scrollIntoView({behavior:"smooth", block:"center"});
 });
-$("bulk-bad").addEventListener("click", e => { if (e.target.closest("#bulk-dropbad")){ bulk = bulk.filter(b => !b.bad); saveBulk(); renderBulk(false); } });
+$("bulk-bad").addEventListener("click", e => { if (e.target.closest("#bulk-dropbad")) bury(new Set(live().filter(c => c.bad).map(c => c.id))); });
 let bulkClearArmed = 0;
 $("bulk-clear").addEventListener("click", () => {
   const btn = $("bulk-clear");
-  if (!bulkClearArmed){ btn.textContent = "Tap again to clear every address"; bulkClearArmed = setTimeout(() => { bulkClearArmed = 0; btn.textContent = "Clear the whole list"; }, 3000); return; }
+  if (!bulkClearArmed){ btn.textContent = "Tap again to remove every customer"; bulkClearArmed = setTimeout(() => { bulkClearArmed = 0; btn.textContent = "Clear the whole list"; }, 3000); return; }
   clearTimeout(bulkClearArmed); bulkClearArmed = 0; btn.textContent = "Clear the whole list";
-  bulk = []; picked.clear(); $("bulk-find").value = ""; saveBulk(); renderBulk(false); bstatus("");
+  $("bulk-find").value = ""; bury(new Set(live().map(c => c.id))); bstatus("");
 });
 
 /* ============ wiring ============ */
@@ -830,7 +1012,7 @@ $("clear").addEventListener("click", async () => {
   clearTimeout(clearArmed); clearArmed = 0; btn.textContent = "Clear all jobs";
   setJobs([]); saveDraft(); status("");
   route = null; done = new Set(); saveMine(); emptyState();
-  if (bulk.some(b => b.sent)){ bulk.forEach(b => { b.sent = false; }); saveBulk(); renderBulk(false); }
+  if (sentIds.size){ sentIds.clear(); storeLocal(); renderBulk(false); }
 });
 document.addEventListener("pointerdown", e => { if (suggFor && !e.target.closest(".addr-box")) closeSugg(); });
 
@@ -839,7 +1021,7 @@ $("start").value = DEFAULT_START;
 setJobs([]);
 emptyState();
 (async () => {
-  try { await api("session"); showApp(); await loadDay(true); startSync(); renderBulk(false); let t = "planner"; try { t = localStorage.getItem("cbs-tab") || t; } catch(e){} showTab(t === "bulk" ? "bulk" : "planner"); }
+  try { await api("session"); showApp(); await loadDay(true); startSync(); renderBulk(false); syncCust(); let t = "planner"; try { t = localStorage.getItem("cbs-tab") || t; } catch(e){} showTab(t === "bulk" ? "bulk" : "planner"); }
   catch(e){ if (!(e instanceof NeedPin)){ showApp(); status(e.message, true); } }
 })();
 })();
