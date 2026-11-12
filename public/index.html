@@ -7,6 +7,7 @@
 <meta name="description" content="Daily route planner for Chesapeake Bay Support LLC.">
 <meta name="theme-color" content="#f2eee3">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'%3E%3Ccircle cx='21' cy='21' r='21' fill='%23b9bf8e'/%3E%3Cpath d='M21 8c-6 5-8 10-6 15.5 1.5-4 4-7 8-9-3 4-4.5 8-4 13 6-3 8-10 2-19.5z' fill='%2323261a'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("cbs-theme");if(t==="dark"||t==="light")document.documentElement.dataset.theme=t;}catch(e){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700&family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
@@ -17,9 +18,27 @@
   --bg:#f2eee3; --surface:#faf8f3; --field:#ffffff; --soft:#efebe1; --line:#ddd7ca;
   --ink:#22201d; --muted:#6c675e; --accent:#b9bf8e; --accent-edge:#a5ac78; --on-accent:#23261a; --olive-ink:#868d5e;
   --gold:#c9971c; --gold-soft:#ecd37f; --gold-tint:#f8efd2; --gold-tint-on:#f1e3b6; --deep:#22201d; --on-deep:#faf8f3; --sky:#e2e4cd; --on-sky:#22201d; --route:#7e8653;
+  --pin-done-bg:#d9d6cc; --pin-done-fg:#6c675e; --placeholder:#a19b90; --od75:rgba(250,248,243,.75); --od28:rgba(250,248,243,.28); --od10:rgba(250,248,243,.1);
   --display:"Inter Tight","Helvetica Neue",Arial,sans-serif;
   --body:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   color-scheme:light;
+}
+/* dark mode: follows the phone unless the theme button picks one */
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#151612; --surface:#1e201a; --field:#262821; --soft:#2b2d25; --line:#3a3c33;
+    --ink:#ecebe3; --muted:#a6a395; --accent:#b4bb87; --accent-edge:#c8ce9f; --on-accent:#1c1f13; --olive-ink:#c0c792;
+    --gold:#d6a72e; --gold-soft:#e4c35e; --gold-tint:#332c18; --gold-tint-on:#40371c; --deep:#ecebe3; --on-deep:#1b1c17; --sky:#30332a; --on-sky:#ecebe3; --route:#7e8653;
+    --pin-done-bg:#55564e; --pin-done-fg:#d0cdc1; --placeholder:#77746a; --od75:rgba(27,28,23,.7); --od28:rgba(27,28,23,.28); --od10:rgba(27,28,23,.08);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#151612; --surface:#1e201a; --field:#262821; --soft:#2b2d25; --line:#3a3c33;
+  --ink:#ecebe3; --muted:#a6a395; --accent:#b4bb87; --accent-edge:#c8ce9f; --on-accent:#1c1f13; --olive-ink:#c0c792;
+  --gold:#d6a72e; --gold-soft:#e4c35e; --gold-tint:#332c18; --gold-tint-on:#40371c; --deep:#ecebe3; --on-deep:#1b1c17; --sky:#30332a; --on-sky:#ecebe3; --route:#7e8653;
+  --pin-done-bg:#55564e; --pin-done-fg:#d0cdc1; --placeholder:#77746a; --od75:rgba(27,28,23,.7); --od28:rgba(27,28,23,.28); --od10:rgba(27,28,23,.08);
+  color-scheme:dark;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0}
@@ -32,6 +51,9 @@ button,input{font:inherit;color:inherit}
 /* header */
 header .wrap{padding-block:24px 0;display:flex;gap:12px;align-items:center}
 .mark{flex:none;width:36px;height:36px}
+.theme-btn{appearance:none;margin-left:auto;flex:none;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--muted);display:grid;place-items:center;cursor:pointer;padding:0}
+.theme-btn:hover{color:var(--ink);background:var(--soft)}
+.theme-btn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .brand{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--olive-ink);font-weight:700}
 h1{font-family:var(--display);font-weight:700;letter-spacing:-.015em;font-size:clamp(24px,5.5vw,30px);line-height:1.1;margin:1px 0 0}
 
@@ -47,7 +69,7 @@ h2{font-family:var(--display);font-weight:700;letter-spacing:-.005em;font-size:2
 input[type=text],input[type=password]{width:100%;font-size:16px;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 input[type=text],input[type=password],input[type=search],input[type=date],textarea,select{transition:border-color .15s,box-shadow .15s}
 input[type=text]:focus,input[type=password]:focus,input[type=search]:focus,input[type=date]:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent-edge);box-shadow:0 0 0 3px rgba(165,172,120,.3)}
-::placeholder{color:#a19b90}
+::placeholder{color:var(--placeholder)}
 
 /* address boxes + suggestions */
 .addr-box{position:relative;min-width:0}
@@ -105,7 +127,7 @@ input[type=text]:focus,input[type=password]:focus,input[type=search]:focus,input
 .credit{font-size:11px;color:var(--muted);margin:0 0 14px;text-align:right}
 .credit a{color:inherit}
 .m-pin{width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--on-accent);border:2px solid #fff;display:grid;place-items:center;font:700 12px var(--display);box-shadow:0 1px 3px rgba(0,0,0,.25)}
-.m-pin.done{background:#d9d6cc;color:#6c675e}
+.m-pin.done{background:var(--pin-done-bg);color:var(--pin-done-fg)}
 .m-hq{width:28px;height:28px;border-radius:8px;background:var(--deep);color:var(--on-deep);border:2px solid #fff;display:grid;place-items:center;box-shadow:0 1px 3px rgba(0,0,0,.25)}
 .m-hq svg{width:15px;height:15px}
 .glance{list-style:none;margin:0 0 16px;padding:6px 14px;border:1px solid var(--line);border-radius:12px}
@@ -158,6 +180,11 @@ select:hover{border-color:var(--accent-edge)}
 input[type=date]{appearance:none;-webkit-appearance:none;cursor:pointer}
 input[type=date]::-webkit-calendar-picker-indicator{opacity:.55;cursor:pointer}
 
+/* offline notice */
+main .offline-wrap{display:block;padding-block:0}
+.offline{display:flex;gap:10px;align-items:flex-start;margin-top:16px;padding:10px 14px;border-radius:12px;background:var(--gold-tint);border:1px solid var(--gold);font-size:14px;line-height:1.4}
+.offline svg{flex:none;width:18px;height:18px;margin-top:1px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+
 /* tabs */
 main .tabs-wrap{display:block;padding-block:18px 0}
 .tabs{display:inline-flex;gap:2px;padding:4px;background:var(--soft);border:1px solid var(--line);border-radius:999px;max-width:100%}
@@ -173,13 +200,19 @@ textarea{width:100%;min-height:150px;font:inherit;font-size:16px;line-height:1.4
 .selbar{position:fixed;z-index:40;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));width:min(560px,calc(100% - 24px));
   display:flex;align-items:center;gap:6px;background:var(--deep);color:var(--on-deep);border-radius:16px;padding:8px 8px 8px 16px;box-shadow:0 14px 36px rgba(34,32,29,.3)}
 .selbar b{font-size:14px;margin-right:auto;white-space:nowrap}
-.selbar #bulk-unsel{order:1;color:rgba(250,248,243,.75);padding:8px 6px}
-.selbar #bulk-remove{order:2;background:transparent;color:var(--on-deep);border:1px solid rgba(250,248,243,.28);padding:8px 12px;font-size:14px;min-height:40px}
-.selbar #bulk-remove:hover{background:rgba(250,248,243,.1)}
+.selbar #bulk-unsel{order:1;color:var(--od75);padding:8px 6px}
+.selbar #bulk-remove{order:2;background:transparent;color:var(--on-deep);border:1px solid var(--od28);padding:8px 12px;font-size:14px;min-height:40px}
+.selbar #bulk-remove:hover{background:var(--od10)}
 .selbar #bulk-addsel{order:3;width:auto;min-height:40px;padding:8px 16px;white-space:nowrap}
 @media (prefers-reduced-motion: no-preference){.selbar:not([hidden]){animation:rise .18s ease-out}}
 @keyframes rise{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
 body.has-selbar .site-foot{padding-bottom:96px}
+.toast{position:fixed;z-index:70;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));max-width:calc(100% - 24px);
+  display:flex;align-items:center;gap:14px;background:var(--deep);color:var(--on-deep);border-radius:14px;padding:8px 8px 8px 16px;box-shadow:0 14px 36px rgba(34,32,29,.3);font-size:14px;font-weight:600}
+body.has-selbar .toast{bottom:calc(80px + env(safe-area-inset-bottom,0px))}
+.toast-undo{appearance:none;border:0;background:var(--accent);color:var(--on-accent);font:inherit;font-weight:700;padding:8px 16px;border-radius:10px;cursor:pointer;white-space:nowrap}
+.toast-undo:hover{background:var(--accent-edge)}
+@media (prefers-reduced-motion: no-preference){.toast.show{animation:rise .18s ease-out}}
 .b-tools{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin:0 0 8px}
 .b-tools input{flex:1 1 100%;min-width:0;font-size:16px;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
 .b-lhead{display:flex;justify-content:space-between;align-items:baseline;margin:4px 2px 6px;font-size:13px;font-weight:600;color:var(--muted)}
@@ -270,6 +303,18 @@ body.sheet-open{overflow:hidden}
 .b-pin.star.sel{background:var(--ink);box-shadow:0 0 0 3px var(--gold),0 1px 3px rgba(0,0,0,.3)}
 .b-pin.sel{background:var(--ink);color:var(--on-deep);transform:scale(1.2)}
 .b-pin.sent{opacity:.35}
+.b-pin.paused{background:var(--pin-done-bg);color:var(--pin-done-fg)}
+.b-row.paused .b-text,.b-row.paused .b-num{opacity:.6}
+.b-meta > .b-paused{font-weight:700;color:var(--muted);background:var(--soft);border:1px dashed var(--muted)}
+.b-switch{display:flex;gap:12px;align-items:flex-start;cursor:pointer;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--field)}
+.b-switch input{position:absolute;opacity:0;width:1px;height:1px}
+.b-sw{flex:none;position:relative;width:42px;height:24px;border-radius:12px;background:var(--line);transition:background .15s;margin-top:1px}
+.b-sw::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+.b-switch input:checked + .b-sw{background:var(--olive-ink)}
+.b-switch input:checked + .b-sw::after{transform:translateX(18px)}
+.b-switch input:focus-visible + .b-sw{outline:3px solid var(--accent-edge);outline-offset:2px}
+.b-sw-t{display:flex;flex-direction:column;gap:2px;font-size:14px}
+.b-sw-t small{font-size:12.5px;color:var(--muted);font-weight:400;line-height:1.35}
 
 .site-foot{padding-block:0 28px;text-align:center;font-size:13px;color:var(--muted)}
 .site-foot button{margin-left:6px}
@@ -295,6 +340,7 @@ body.sheet-open{overflow:hidden}
       <div class="brand">Chesapeake Bay Support LLC</div>
       <h1>Daily Route Planner</h1>
     </div>
+    <button class="theme-btn" id="theme-btn" type="button" aria-label="Theme: match my phone" title="Theme: match my phone"></button>
   </div>
 </header>
 
@@ -310,6 +356,10 @@ body.sheet-open{overflow:hidden}
 </section>
 
 <main id="app" hidden>
+  <div class="wrap offline-wrap"><div class="offline" id="offline" role="status" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 8.5a15 15 0 0 1 20 0M5.5 12a10 10 0 0 1 13 0M9 15.5a5 5 0 0 1 6 0"/><path d="M3 3l18 18"/></svg>
+    <span><b>No signal.</b> Your route and check-offs still work. Changes send when you're back online.</span>
+  </div></div>
   <div class="wrap tabs-wrap">
     <div class="tabs" role="tablist" aria-label="Tools">
       <button class="tab" role="tab" id="tab-planner" aria-controls="planner" aria-selected="true" type="button">Route planner</button>
@@ -335,13 +385,14 @@ body.sheet-open{overflow:hidden}
           <input type="search" id="bulk-find" placeholder="Search names, addresses or notes" aria-label="Search names, addresses or notes" autocomplete="off">
           <button class="b-filter" id="bulk-stars" type="button" aria-pressed="false">★ Premium</button>
           <button class="b-filter" id="bulk-due" type="button" aria-pressed="false">Due</button>
+          <button class="b-filter" id="bulk-paused" type="button" aria-pressed="false" hidden>Paused</button>
           <select id="bulk-day" aria-label="Service day"><option value="">Any day</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option></select>
         </div>
         <div class="b-lhead"><span id="bulk-shown"></span><button class="btn-link" id="bulk-all" type="button">Select all</button></div>
         <ol class="b-list" id="bulk-list" aria-label="Address index"></ol>
         <div id="bulk-bad"></div>
         <p class="b-sync" id="bulk-sync" aria-live="polite"></p>
-        <div class="row-btns"><button class="btn btn-line" id="bulk-clear" type="button">Clear the whole list</button></div>
+        <div class="row-btns"><button class="btn btn-soft" id="bulk-export" type="button">Download backup</button><button class="btn btn-line" id="bulk-clear" type="button">Clear the whole list</button></div>
       </div>
     </section>
 
@@ -402,6 +453,8 @@ body.sheet-open{overflow:hidden}
   <div class="sheet" id="cust-sheet-card" role="dialog" aria-modal="true" aria-labelledby="sheet-title"></div>
 </div>
 
+<div class="toast" id="toast" role="status" aria-live="polite" hidden><span id="toast-t"></span><button class="toast-undo" id="toast-undo" type="button">Undo</button></div>
+
 <footer class="site-foot" id="foot"><div class="wrap">Chesapeake Bay Support LLC<button class="btn-link" id="signout" type="button" hidden>Sign out</button></div></footer>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js" defer></script>
@@ -448,7 +501,7 @@ function showApp(){ $("lock").hidden = true; $("app").hidden = false; $("signout
 $("lock-form").addEventListener("submit", async e => {
   e.preventDefault();
   const s = $("pin-status"); s.className = "status"; s.textContent = "Checking…"; $("pin-go").disabled = true;
-  try { await api("login", {method:"POST", body:{pin:$("pin").value}}); $("pin").value = ""; s.textContent = ""; showApp(); await loadDay(true); startSync(); renderBulk(false); syncCust(); }
+  try { await api("login", {method:"POST", body:{pin:$("pin").value}}); $("pin").value = ""; s.textContent = ""; showApp(); await loadDay(true); startSync(); afterSignIn(); }
   catch(err){ s.className = "status err"; s.textContent = err.message === "Wrong PIN" ? "That PIN didn't work. Try again." : err.message; }
   finally { $("pin-go").disabled = false; }
 });
@@ -769,6 +822,22 @@ async function loadDay(){
 function startSync(){}
 function stopSync(){}
 
+/* ============ theme: match my phone → dark → light ============ */
+const THEMES = {
+  auto:{label:"Theme: match my phone", icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>'},
+  dark:{label:"Theme: dark", icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>'},
+  light:{label:"Theme: light", icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>'}
+};
+function applyTheme(t){
+  if (t === "auto") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
+  try { t === "auto" ? localStorage.removeItem("cbs-theme") : localStorage.setItem("cbs-theme", t); } catch(e){}
+  const b = $("theme-btn"); b.innerHTML = THEMES[t].icon; b.setAttribute("aria-label", THEMES[t].label); b.title = THEMES[t].label;
+  const meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.content = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();
+}
+applyTheme(document.documentElement.dataset.theme || "auto");
+$("theme-btn").addEventListener("click", () => { const cur = document.documentElement.dataset.theme || "auto"; applyTheme({auto:"dark", dark:"light", light:"auto"}[cur]); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => { if (!document.documentElement.dataset.theme) applyTheme("auto"); });
+
 /* ============ tabs ============ */
 function showTab(t){
   $("planner").hidden = t !== "planner"; $("bulk").hidden = t !== "bulk";
@@ -809,8 +878,8 @@ const dayStr = d => d.toLocaleDateString("en-CA");
 const addDays = (s, n) => { const d = dayObj(s); d.setDate(d.getDate() + n); return dayStr(d); };
 const daysFrom = (a, b) => Math.round((dayObj(b) - dayObj(a)) / 864e5);
 const fmtDay = s => { const d = dayObj(s); return d.toLocaleDateString("en-US", d.getFullYear() === new Date().getFullYear() ? {month:"short", day:"numeric"} : {month:"short", day:"numeric", year:"numeric"}); };
-function dueOf(c){                       // null when there's no schedule
-  if (!c.freq) return null;
+function dueOf(c){                       // null when there's no schedule (or the customer is paused)
+  if (!c.freq || c.paused) return null;
   const last = (c.hist || [])[0];
   if (!last) return {due:true, text:"Due"};
   const next = addDays(last, c.freq), wait = daysFrom(today(), next);
@@ -868,11 +937,18 @@ try {
   }
 } catch(e){ cust = []; }
 
-function bury(ids){                       // remove, leaving a small marker so other phones remove it too
-  const now = Date.now();
+function bury(ids, what){                 // remove, leaving a small marker so other phones remove it too
+  const now = Date.now(), gone = cust.filter(c => ids.has(c.id) && !c.del).map(c => ({...c})), wasSent = gone.filter(c => sentIds.has(c.id)).map(c => c.id);
+  if (!gone.length) return;
   cust = cust.map(c => ids.has(c.id) && !c.del ? {id:c.id, born:c.born, mod:now, del:true} : c);
   ids.forEach(id => { picked.delete(id); sentIds.delete(id); });
   saveCust(); renderBulk(false);
+  toast(what || `Removed ${gone.length} customer${gone.length > 1 ? "s" : ""}`, () => {
+    const at = Date.now();
+    gone.forEach(o => { const i = cust.findIndex(c => c.id === o.id), back = {...o, mod:at}; i >= 0 ? cust[i] = back : cust.push(back); });
+    wasSent.forEach(id => sentIds.add(id));
+    cust.sort((x, y) => (x.born || 0) - (y.born || 0)); saveCust(); renderBulk(false);
+  });
 }
 
 /* ---- add one customer at a time: pick from suggestions so the address is always right ---- */
@@ -939,6 +1015,7 @@ $("one-go").addEventListener("click", addTyped);
 const pressed = id => $(id).getAttribute("aria-pressed") === "true";
 function passes(c){
   const day = $("bulk-day").value;
+  if (pressed("bulk-paused") ? !c.paused : c.paused) return false;   // paused customers only show under the Paused filter
   return (!pressed("bulk-stars") || c.star) && (!pressed("bulk-due") || (dueOf(c) || {}).due) && (day === "" || (c.days || []).includes(+day));
 }
 
@@ -955,7 +1032,11 @@ function renderList(){
   list.innerHTML = shown.length ? shown.map(({c, n}) => row(c, n)).join("")
     : `<li class="b-empty">${!ok.length ? "None of these were found yet." : "No customers match these filters."}</li>`;
   list.scrollTop = keep;
-  $("bulk-shown").textContent = shown.length === ok.length ? `${ok.length} customer${ok.length === 1 ? "" : "s"}` : `Showing ${shown.length} of ${ok.length}`;
+  const paused = ok.filter(c => c.paused).length, active = ok.length - paused;
+  $("bulk-paused").hidden = !paused && !pressed("bulk-paused");
+  if (!paused && pressed("bulk-paused")){ $("bulk-paused").setAttribute("aria-pressed", "false"); $("bulk-paused").hidden = true; }
+  $("bulk-shown").textContent = pressed("bulk-paused") ? `${shown.length} paused` :
+    (shown.length === active ? `${active} customer${active === 1 ? "" : "s"}` : `Showing ${shown.length} of ${active}`) + (paused ? ` · ${paused} paused` : "");
   $("bulk-bad").innerHTML = bad.length ? `<div class="b-bad"><div class="b-bad-h"><b>⚠ Not found (${bad.length})</b><button class="btn-link" type="button" id="bulk-dropbad">Remove these</button></div>` +
     `<ul>${bad.map(c => `<li>${esc(c.text)}</li>`).join("")}</ul></div>` : "";
   updatePicks(); showSync();
@@ -965,8 +1046,8 @@ function row(c, n){
   const meta = (c.freq ? `<span class="b-tag">${esc(FREQ_SHORT[c.freq] || `Every ${c.freq} days`)}</span>` : "") +
     ((c.days || []).length ? `<span class="b-tag b-tag-day">${esc(WEEK.filter(d => c.days.includes(d)).map(d => DAY_NAMES[d]).join(" · "))}</span>` : "") +
     (last ? `<span class="b-last">Last ${esc(fmtDay(last))}</span>` : "");
-  const dueTag = due ? `<span class="${due.due ? "b-due" + (due.text === "Overdue" ? " late" : "") : "b-next"}">${esc(due.text)}</span>` : "";
-  return `<li class="b-row${sent ? " sent" : ""}${c.star ? " star" : ""}" data-id="${id}"><label><input type="checkbox" data-id="${id}"><span class="b-num">${n}</span>` +
+  const dueTag = c.paused ? `<span class="b-paused">Paused</span>` : due ? `<span class="${due.due ? "b-due" + (due.text === "Overdue" ? " late" : "") : "b-next"}">${esc(due.text)}</span>` : "";
+  return `<li class="b-row${sent ? " sent" : ""}${c.star ? " star" : ""}${c.paused ? " paused" : ""}" data-id="${id}"><label><input type="checkbox" data-id="${id}"><span class="b-num">${n}</span>` +
     `<span class="b-text">${c.name ? `<span class="b-name">${esc(c.name)}</span>` : ""}<span class="b-addr">${esc(nameOf(c))}</span>` +
     `</span></label>` +
     `${sent ? "<small>On route</small>" : ""}<div class="b-acts">` +
@@ -989,6 +1070,7 @@ function editor(c){
       ${d.hist.length ? `<div class="b-visits">${d.hist.map(h => `<span class="b-visit">${esc(fmtDay(h))}<button type="button" data-unvisit="${h}" aria-label="Remove visit on ${esc(fmtDay(h))}">×</button></span>`).join("")}</div>` : `<p class="b-hint">No visits yet. Checking "Job done" on a route adds one.</p>`}
       <div class="b-addvisit"><input type="date" name="visit" value="${today()}" max="${today()}" aria-label="Visit date"><button class="btn btn-line" type="button" data-addvisit>Add visit</button></div>
     </fieldset>
+    <label class="b-switch"><input type="checkbox" name="paused"${d.paused ? " checked" : ""}><span class="b-sw" aria-hidden="true"></span><span class="b-sw-t"><b>Pause this customer</b><small>Hides them from the map and the Due list. Their info and visits are kept.</small></span></label>
     <div class="b-ed-btns"><button class="btn btn-main" type="submit">Save</button><button class="btn btn-line" type="button" data-cancel>Cancel</button></div>
   </form>`;
 }
@@ -1014,7 +1096,7 @@ function drawBulkMap(fit){
     if (!passes(c)) return;                            // the filters hide pins too
     shown.push(c);
     const el = document.createElement("button"); el.type = "button";
-    el.className = "b-pin" + (sentIds.has(c.id) ? " sent" : "") + (c.star ? " star" : ""); el.textContent = i + 1;
+    el.className = "b-pin" + (sentIds.has(c.id) ? " sent" : "") + (c.star ? " star" : "") + (c.paused ? " paused" : ""); el.textContent = i + 1;
     el.title = (c.name ? c.name + " · " : "") + nameOf(c) + (c.star ? " · Premium" : "");
     el.setAttribute("aria-label", `Select ${i + 1}, ${el.title}`);
     el.addEventListener("click", e => { e.stopPropagation(); togglePick(c.id); });
@@ -1075,7 +1157,7 @@ function renderSheet(focus){
 function openEditor(id){
   const c = findC(id); if (!c) return;
   editing = id; sheetFrom = document.activeElement;
-  draft = {name:c.name || "", notes:c.notes || "", freq:c.freq || 0, days:[...(c.days || [])], hist:[...(c.hist || [])]};
+  draft = {name:c.name || "", notes:c.notes || "", freq:c.freq || 0, days:[...(c.days || [])], hist:[...(c.hist || [])], paused:!!c.paused};
   renderSheet(true);
 }
 function closeEditor(save){
@@ -1086,6 +1168,8 @@ function closeEditor(save){
     +draft.freq ? c.freq = +draft.freq : delete c.freq;
     draft.days.length ? c.days = [...draft.days] : delete c.days;
     draft.hist.length ? c.hist = [...draft.hist].sort().reverse() : delete c.hist;
+    if (draft.paused && !c.paused){ picked.delete(c.id); }
+    draft.paused ? c.paused = true : delete c.paused;
     touch(c); saveCust(); drawBulkMap(false); if (route) showRoute();
   }
   editing = null; draft = null; renderSheet(false); renderList();
@@ -1094,11 +1178,12 @@ function closeEditor(save){
 function readEditor(form){
   draft.name = form.elements.name.value; draft.notes = form.elements.notes.value; draft.freq = +form.elements.freq.value;
   draft.days = [...form.querySelectorAll("input[name=day]:checked")].map(i => +i.value);
+  draft.paused = form.elements.paused.checked;
 }
 
 /* ---- wiring ---- */
 $("bulk-find").addEventListener("input", renderList);
-["bulk-stars","bulk-due"].forEach(id => $(id).addEventListener("click", () => { const b = $(id); b.setAttribute("aria-pressed", String(!pressed(id))); renderList(); drawBulkMap(true); updatePicks(); }));
+["bulk-stars","bulk-due","bulk-paused"].forEach(id => $(id).addEventListener("click", () => { const b = $(id); b.setAttribute("aria-pressed", String(!pressed(id))); renderList(); drawBulkMap(true); updatePicks(); }));
 $("bulk-day").addEventListener("change", () => { renderList(); drawBulkMap(true); updatePicks(); });
 $("bulk-all").addEventListener("click", () => { $("bulk-list").querySelectorAll(".b-row[data-id]:not(.sent)").forEach(li => picked.add(li.dataset.id)); updatePicks(); });
 $("bulk-addsel").addEventListener("click", () => addToRoute([...picked]));
@@ -1136,12 +1221,26 @@ $("bulk-list").addEventListener("click", e => {
   if (matchMedia("(max-width:820px)").matches) $("bulk-map").scrollIntoView({behavior:"smooth", block:"center"});
 });
 $("bulk-bad").addEventListener("click", e => { if (e.target.closest("#bulk-dropbad")) bury(new Set(live().filter(c => c.bad).map(c => c.id))); });
-let bulkClearArmed = 0;
+// the whole customer list as a spreadsheet file (opens in Excel, Numbers or Google Sheets)
+$("bulk-export").addEventListener("click", () => {
+  const rows = [["#","Name","Address","Premium","Paused","How often","Service days","Last visit","Next due","Visits","All visit dates","Notes"]];
+  onMap().forEach((c, i) => {
+    const d = dueOf(c), last = (c.hist || [])[0];
+    rows.push([i + 1, c.name || "", nameOf(c), c.star ? "Yes" : "", c.paused ? "Yes" : "", c.freq ? (FREQS.find(f => f[0] === c.freq) || [0, c.freq + " days"])[1] : "",
+      WEEK.filter(n => (c.days || []).includes(n)).map(n => DAY_NAMES[n]).join(" "), last || "", d ? (d.due ? d.text : addDays(last, c.freq)) : "",
+      (c.hist || []).length || "", (c.hist || []).slice().reverse().join(" "), c.notes || ""]);
+  });
+  live().filter(c => c.bad).forEach(c => rows.push(["", c.name || "", c.text, "", "", "", "", "", "", "", "", "Address not found"]));
+  const csv = rows.map(r => r.map(v => { v = String(v); return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; }).join(",")).join("\r\n");
+  const url = URL.createObjectURL(new Blob(["\ufeff" + csv], {type:"text/csv;charset=utf-8"}));
+  const a = document.createElement("a"); a.href = url; a.download = `CBS customers ${today()}.csv`; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  bstatus(`Downloaded a backup of ${onMap().length} customer${onMap().length === 1 ? "" : "s"}.`, false);
+});
 $("bulk-clear").addEventListener("click", () => {
-  const btn = $("bulk-clear");
-  if (!bulkClearArmed){ btn.textContent = "Tap again to remove every customer"; bulkClearArmed = setTimeout(() => { bulkClearArmed = 0; btn.textContent = "Clear the whole list"; }, 3000); return; }
-  clearTimeout(bulkClearArmed); bulkClearArmed = 0; btn.textContent = "Clear the whole list";
-  $("bulk-find").value = ""; bury(new Set(live().map(c => c.id))); bstatus("");
+  const n = live().length; if (!n) return;
+  $("bulk-find").value = ""; bstatus("");
+  bury(new Set(live().map(c => c.id)), `Cleared the list (${n} customer${n > 1 ? "s" : ""})`);
 });
 
 /* ============ wiring ============ */
@@ -1151,28 +1250,55 @@ $("out").addEventListener("click", e => { if (e.target.closest('.nav[aria-disabl
 ["home","tolls"].forEach(id => $(id).addEventListener("change", () => { saveDraft(); markStale(); if (route && !$("go").disabled) plan(); }));
 $("go").addEventListener("click", plan);
 $("add").addEventListener("click", () => { const inp = addRow(); syncRows(); saveDraft(); inp.focus(); });
-let clearArmed = 0;
-$("clear").addEventListener("click", async () => {
-  const btn = $("clear");
-  if (route && !clearArmed){            // ask for a second tap so a route isn't wiped by accident
-    btn.textContent = "Tap again to clear the route";
-    clearArmed = setTimeout(() => { clearArmed = 0; btn.textContent = "Clear all jobs"; }, 3000);
-    return;
-  }
-  clearTimeout(clearArmed); clearArmed = 0; btn.textContent = "Clear all jobs";
+$("clear").addEventListener("click", () => {
+  const jobs = boxes().filter(b => b.value.trim()).map(b => { const p = placeOf(b); return p ? {...p, label:b.value.trim()} : b.value.trim(); });
+  if (!jobs.length && !route) return;
+  const was = {jobs, route, done:[...done], sent:[...sentIds]};
   setJobs([]); saveDraft(); status("");
   route = null; done = new Set(); saveMine(); emptyState();
   if (sentIds.size){ sentIds.clear(); storeLocal(); renderBulk(false); }
+  toast("Cleared today's jobs", () => {
+    setJobs(was.jobs); saveDraft();
+    route = was.route; done = new Set(was.done); saveMine(); showRoute();
+    was.sent.forEach(id => sentIds.add(id)); storeLocal(); renderBulk(false);
+  });
 });
+
+/* ============ undo toast ============ */
+let toastTimer = 0, toastUndo = null;
+function toast(text, undo){
+  $("toast-t").textContent = text; toastUndo = undo || null; $("toast-undo").hidden = !undo;
+  const t = $("toast"); t.hidden = false; t.classList.remove("show"); void t.offsetWidth; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(hideToast, 7000);
+}
+function hideToast(){ clearTimeout(toastTimer); $("toast").hidden = true; toastUndo = null; }
+$("toast-undo").addEventListener("click", () => { const u = toastUndo; hideToast(); if (u) u(); });
 document.addEventListener("pointerdown", e => { if (suggFor && !e.target.closest(".addr-box")) closeSugg(); });
+
+/* ============ working without signal ============ */
+// The page itself is kept on the phone (sw.js), routes and check-offs already live on the phone,
+// and customer changes wait and send themselves when the signal comes back.
+function showOffline(){ $("offline").hidden = navigator.onLine; }
+addEventListener("offline", showOffline);
+addEventListener("online", () => { showOffline(); syncCust(); });
+if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("/sw.js").catch(() => {});
+function afterSignIn(){
+  renderBulk(false); syncCust();
+  let t = "planner"; try { t = localStorage.getItem("cbs-tab") || t; } catch(e){}
+  showTab(t === "bulk" ? "bulk" : "planner"); showOffline();
+}
 
 /* ============ start up ============ */
 $("start").value = DEFAULT_START;
 setJobs([]);
 emptyState();
 (async () => {
-  try { await api("session"); showApp(); await loadDay(true); startSync(); renderBulk(false); syncCust(); let t = "planner"; try { t = localStorage.getItem("cbs-tab") || t; } catch(e){} showTab(t === "bulk" ? "bulk" : "planner"); }
-  catch(e){ if (!(e instanceof NeedPin)){ showApp(); status(e.message, true); } }
+  try { await api("session", {timeout:6000}); showApp(); await loadDay(true); startSync(); afterSignIn(); }
+  catch(e){
+    if (e instanceof NeedPin) return;
+    // no signal (or the site is unreachable): open with what's saved on this phone
+    showApp(); await loadDay(true); afterSignIn(); $("offline").hidden = false;
+  }
 })();
 })();
 </script>
