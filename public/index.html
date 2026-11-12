@@ -187,6 +187,58 @@ select:hover{border-color:var(--accent-edge)}
 input[type=date]{appearance:none;-webkit-appearance:none;cursor:pointer}
 input[type=date]::-webkit-calendar-picker-indicator{opacity:.55;cursor:pointer}
 
+/* week strip (route planner) */
+#planner .week{grid-column:1/-1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.wk{appearance:none;position:relative;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:8px 0 11px;display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;min-width:0}
+.wk-d{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.wk-n{font-family:var(--display);font-size:19px;font-weight:700;line-height:1.1}
+.wk:hover{border-color:var(--accent-edge)}
+.wk.today{border-color:var(--olive-ink);box-shadow:inset 0 0 0 1px var(--olive-ink)}
+.wk.today .wk-d{color:var(--olive-ink)}
+.wk.past{background:transparent;color:var(--muted);border-style:dashed}
+.wk.past .wk-n{opacity:.6}
+.wk.sel{background:var(--accent);border-color:var(--accent-edge);color:var(--on-accent);box-shadow:none}
+.wk.sel .wk-d{color:var(--on-accent)}
+.wk.past.sel{background:var(--soft);color:var(--ink);border-style:solid}
+.wk.has::after{content:"";position:absolute;bottom:5px;left:50%;margin-left:-2.5px;width:5px;height:5px;border-radius:50%;background:var(--olive-ink)}
+.wk.sel.has::after{background:var(--on-accent)}
+#planner.closed-day > section.panel:not(.closed-card){display:none}
+#planner .closed-card{grid-column:1/-1}
+.closed-card h2{margin:0 0 6px}
+.closed-card > p{color:var(--muted);margin:0 0 16px}
+.closed-card .log-day{margin-bottom:14px}
+.done-box.wait{opacity:.45;cursor:not-allowed}
+@media (max-width:420px){ .wk-n{font-size:17px} .wk{padding:7px 0 10px} #planner .week{gap:4px} }
+
+/* route log */
+main #log{grid-template-columns:minmax(0,1fr)}
+.log-intro{margin:-6px 0 16px;color:var(--muted);font-size:14px}
+.log-month{font-family:var(--display);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--olive-ink);margin:18px 2px 8px}
+.log-month:first-child{margin-top:0}
+.log-group{display:grid;gap:8px}
+.log-day{border:1px solid var(--line);border-radius:14px;background:var(--field);overflow:hidden}
+.log-day summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:6px 12px;padding:14px 16px}
+.log-day summary::-webkit-details-marker{display:none}
+.ld-date{font-weight:700;font-size:15px}
+.ld-pend{font-weight:600;color:var(--muted);font-size:12px}
+.ld-sum{font-size:13px;font-weight:700;color:var(--muted);white-space:nowrap}
+.ld-sum.all{color:#4f8a4b}
+.ld-bar{grid-column:1/-1;height:4px;border-radius:2px;background:var(--soft);overflow:hidden}
+.ld-bar i{display:block;height:100%;background:var(--olive-ink);border-radius:2px}
+.log-day[open] summary{border-bottom:1px solid var(--line)}
+.ld-stops{list-style:none;margin:0;padding:4px 16px 8px}
+.ld-stops li{display:flex;align-items:flex-start;gap:12px;padding:9px 0;border-top:1px solid var(--line)}
+.ld-stops li:first-child{border-top:0}
+.ld-mark{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;margin-top:1px}
+.ld-stops li.y .ld-mark{background:#4f8a4b;color:#fff}
+.ld-stops li.n .ld-mark{background:var(--soft);color:var(--muted);border:1px solid var(--line)}
+.ld-t{display:flex;flex-direction:column;min-width:0;line-height:1.3}
+.ld-t b{font-size:14px;overflow-wrap:anywhere}
+.ld-t small{font-size:12.5px;color:var(--muted);overflow-wrap:anywhere}
+.ld-stops li.n .ld-t b{color:var(--muted)}
+.log-more{width:100%;margin-top:14px}
+.muted{color:var(--muted)}
+
 /* offline notice */
 main .offline-wrap{display:block;padding-block:0}
 .offline{display:flex;gap:10px;align-items:flex-start;margin-top:16px;padding:10px 14px;border-radius:12px;background:var(--gold-tint);border:1px solid var(--gold);font-size:14px;line-height:1.4}
@@ -197,6 +249,7 @@ main .tabs-wrap{display:block;padding-block:18px 0}
 .tabs{display:inline-flex;gap:2px;padding:4px;background:var(--soft);border:1px solid var(--line);border-radius:999px;max-width:100%}
 .tab{appearance:none;border:0;background:transparent;color:var(--muted);font-weight:600;font-size:15px;padding:8px 18px;border-radius:999px;cursor:pointer;white-space:nowrap}
 .tab:hover{color:var(--ink)}
+@media (max-width:400px){.tab{padding:8px 12px;font-size:14px}}
 .tab[aria-selected="true"]{background:var(--accent);color:var(--on-accent);box-shadow:0 1px 2px rgba(35,38,26,.12)}
 
 /* address map */
@@ -422,6 +475,7 @@ body.sheet-open{overflow:hidden}
     <div class="tabs" role="tablist" aria-label="Tools">
       <button class="tab" role="tab" id="tab-planner" aria-controls="planner" aria-selected="true" type="button">Route planner</button>
       <button class="tab" role="tab" id="tab-bulk" aria-controls="bulk" aria-selected="false" type="button">Address map</button>
+      <button class="tab" role="tab" id="tab-log" aria-controls="log" aria-selected="false" type="button">Log</button>
     </div>
   </div>
 
@@ -482,6 +536,8 @@ body.sheet-open{overflow:hidden}
   </div>
 
   <div class="wrap" id="planner" role="tabpanel" aria-labelledby="tab-planner">
+    <div class="week" id="week" role="tablist" aria-label="Day of the week"></div>
+    <section class="panel closed-card" id="closed-card" hidden></section>
     <section class="panel" aria-labelledby="in-h">
       <div class="panel-h"><h2 id="in-h">Today's jobs</h2></div>
 
@@ -518,9 +574,19 @@ body.sheet-open{overflow:hidden}
       <div id="out"></div>
     </section>
   </div>
+  <!-- route log: every finished day, shared by every phone -->
+  <div class="wrap" id="log" role="tabpanel" aria-labelledby="tab-log" hidden>
+    <section class="panel" aria-labelledby="log-h">
+      <div class="panel-h"><h2 id="log-h">Route log</h2><span class="progress" id="log-count"></span></div>
+      <p class="log-intro">Each day's route is saved here automatically when the day ends, with who was serviced.</p>
+      <div id="log-list"></div>
+      <button class="btn btn-soft log-more" id="log-more" type="button" hidden>Show older days</button>
+    </section>
+  </div>
 </main>
 
 <!-- customer editor card (opens over the page) -->
+
 <div class="sheet-wrap" id="cust-sheet" hidden>
   <div class="sheet" id="cust-sheet-card" role="dialog" aria-modal="true" aria-labelledby="sheet-title"></div>
 </div>
@@ -722,21 +788,34 @@ function setJobs(list){        // list of {label, lat?, lon?, street?} or string
   syncRows();
 }
 
-// unsent edits stay on this device if the page is closed before planning
+/* ---- the week: one plan per date, kept on this phone ----
+   plans["YYYY-MM-DD"] = {draft:{start, jobs, home, tolls}, route, done:[ids]}
+   When a date is in the past its route goes to the shared Route log and the plan is dropped. */
+let plans = {}, selDay = today();
+try { plans = JSON.parse(localStorage.getItem("cbs-week") || "{}") || {}; } catch(e){ plans = {}; }
+function storePlans(){ try { localStorage.setItem("cbs-week", JSON.stringify(plans)); } catch(e){} }
+const planFor = d => plans[d] || (plans[d] = {});
+// typed-but-not-planned edits stay with the selected day
 function saveDraft(){
-  try { localStorage.setItem("cbs-draft", JSON.stringify({day:today(), start:{value:$("start").value, p:placeOf($("start"))},
-    jobs:boxes().map(b => ({value:b.value, p:placeOf(b)})), home:$("home").checked, tolls:$("tolls").checked})); } catch(e){}
+  planFor(selDay).draft = {start:{value:$("start").value, p:placeOf($("start"))},
+    jobs:boxes().map(b => ({value:b.value, p:placeOf(b)})), home:$("home").checked, tolls:$("tolls").checked};
+  tidyPlan(selDay); storePlans();
 }
-function loadDraft(){
-  try { const d = JSON.parse(localStorage.getItem("cbs-draft") || "null"); return d && d.day === today() ? d : null; } catch(e){ return null; }
+function loadDraft(){ return (plans[selDay] || {}).draft || null; }
+function saveMine(){ const pl = planFor(selDay); pl.route = route; pl.done = [...done]; tidyPlan(selDay); storePlans(); }
+function loadMine(){ const pl = plans[selDay]; return pl && pl.route ? pl : null; }
+function tidyPlan(d){                      // forget days with nothing on them
+  const pl = plans[d]; if (!pl) return;
+  const empty = !pl.route && !(pl.draft && pl.draft.jobs && pl.draft.jobs.some(j => j.value && j.value.trim()));
+  if (empty && !(pl.draft && pl.draft.start && pl.draft.start.value && pl.draft.start.value !== DEFAULT_START)) delete plans[d];
 }
-// each phone keeps its own route and check marks; nothing is shared between devices
-function saveMine(){
-  try { localStorage.setItem("cbs-mine", JSON.stringify({day:today(), route, done:[...done]})); } catch(e){}
-}
-function loadMine(){
-  try { const d = JSON.parse(localStorage.getItem("cbs-mine") || "null"); return d && d.day === today() ? d : null; } catch(e){ return null; }
-}
+// move the older one-day storage over
+try {
+  const oldDraft = JSON.parse(localStorage.getItem("cbs-draft") || "null"), oldMine = JSON.parse(localStorage.getItem("cbs-mine") || "null");
+  if (oldDraft && oldDraft.day){ const {day, ...d} = oldDraft; planFor(day).draft = d; }
+  if (oldMine && oldMine.day){ planFor(oldMine.day).route = oldMine.route; planFor(oldMine.day).done = oldMine.done || []; }
+  if (oldDraft || oldMine){ localStorage.removeItem("cbs-draft"); localStorage.removeItem("cbs-mine"); storePlans(); }
+} catch(e){}
 
 /* ============ planning ============ */
 let route = null, done = new Set();
@@ -782,7 +861,7 @@ async function plan(){
 function emptyState(){
   $("progress").textContent = "";
   destroyMap();
-  $("out").innerHTML = `<div class="empty"><svg viewBox="0 0 72 72" aria-hidden="true"><circle cx="36" cy="36" r="36" fill="var(--soft)"/><path d="M18 50c8-14 14 2 22-10s10-14 14-18" fill="none" stroke="var(--muted)" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 7"/><rect x="12" y="44" width="12" height="12" rx="4" fill="var(--deep)"/><circle cx="54" cy="22" r="6" fill="var(--accent)"/></svg>Add today's jobs and tap <b>Plan route</b>.<br>Your stops will show up here in the best order.</div>`;
+  $("out").innerHTML = `<div class="empty"><svg viewBox="0 0 72 72" aria-hidden="true"><circle cx="36" cy="36" r="36" fill="var(--soft)"/><path d="M18 50c8-14 14 2 22-10s10-14 14-18" fill="none" stroke="var(--muted)" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 7"/><rect x="12" y="44" width="12" height="12" rx="4" fill="var(--deep)"/><circle cx="54" cy="22" r="6" fill="var(--accent)"/></svg>Add the jobs and tap <b>Plan route</b>.<br>Your stops will show up here in the best order.</div>`;
 }
 const streetOf = j => j.street || (String(j.label).split(",").map(x => x.trim()).find(x => /^\d+\s/.test(x)) || j.label).replace(/^\d+[a-z]?\s+/i, "");
 
@@ -824,6 +903,9 @@ function showRoute(){
      ${route.missed && route.missed.length ? `<p class="missed">⚠ ${route.missed.length} stop${route.missed.length > 1 ? "s" : ""} couldn't be reached by road and ${route.missed.length > 1 ? "were" : "was"} left off. Check ${route.missed.length > 1 ? "those addresses" : "that address"}.</p>` : ""}`;
 
   $("out").querySelectorAll(".done-box input").forEach(c => c.addEventListener("change", () => toggleDone(c.dataset.id, c.checked)));
+  if (selDay !== today()){                  // check-offs open on the day itself
+    $("out").querySelectorAll(".done-box").forEach(l => { l.classList.add("wait"); l.title = `Check-offs open on ${DOW(selDay)}`; l.querySelector("input").disabled = true; });
+  }
   applyDone(); markStale();
   drawMap(stops, endsHome);
 }
@@ -832,7 +914,7 @@ function showRoute(){
 function applyDone(){
   if (!route) return;
   const ids = route.order.filter(id => route.jobs.some(j => j.id === id));
-  $("progress").textContent = `${ids.filter(id => done.has(id)).length} of ${ids.length} done`;
+  $("progress").textContent = selDay === today() ? `${ids.filter(id => done.has(id)).length} of ${ids.length} done` : `${ids.length} stop${ids.length === 1 ? "" : "s"} · ${DOW(selDay)}`;
   $("out").querySelectorAll(".stops > li[data-id]").forEach(li => {
     const on = done.has(li.dataset.id); li.classList.toggle("isdone", on);
     const c = li.querySelector(".done-box input"); if (c) c.checked = on;
@@ -842,6 +924,7 @@ function applyDone(){
   markers.forEach(m => m.el.classList.toggle("done", done.has(m.id)));
 }
 async function toggleDone(id, on){
+  if (selDay !== today()) return;
   on ? done.add(id) : done.delete(id); applyDone(); saveMine();
   const job = route && route.jobs.find(j => j.id === id); if (job && job.cust) logVisit(job.cust, on);
 }
@@ -879,8 +962,10 @@ function drawMap(stops, endsHome){
 
 /* ============ this phone's saved route ============ */
 async function loadDay(){
+  closePastDays();
   const mine = loadMine();
-  route = mine ? mine.route : null; done = new Set(mine ? mine.done : []);
+  route = mine ? mine.route : null; done = new Set(mine ? mine.done || [] : []);
+  $("start").value = DEFAULT_START; setPlace($("start"), null); $("home").checked = true; $("tolls").checked = true; setJobs([]);
   const draft = loadDraft();
   if (route && (!draft || formSnapshot() === routeSnapshot(route) || !draft.jobs.some(j => j.value))){
     $("start").value = route.start.label; setPlace($("start"), route.start); $("home").checked = !!route.home; $("tolls").checked = route.tolls !== false; setJobs(route.jobs);
@@ -888,8 +973,90 @@ async function loadDay(){
     $("start").value = draft.start.value || DEFAULT_START; setPlace($("start"), draft.start.p); $("home").checked = draft.home !== false; $("tolls").checked = draft.tolls !== false;
     setJobs(draft.jobs.map(j => j.p ? {...j.p, label:j.value} : j.value).filter(Boolean));
   }
-  showRoute();
+  status(""); showRoute(); drawWeek();
+  if (typeof sentIds !== "undefined"){ sentIds = new Set(boxes().map(b => b.dataset.cust).filter(Boolean)); if (typeof renderBulk === "function" && cust.length) { storeLocal(); renderBulk(false); } }
 }
+
+/* ---- day tabs ---- */
+const DOW = d => dayObj(d).toLocaleDateString("en-US", {weekday:"long"});
+function weekDates(){                      // this week, Monday to Sunday
+  const t = today(), back = (dayObj(t).getDay() + 6) % 7, mon = addDays(t, -back);
+  return [0,1,2,3,4,5,6].map(i => addDays(mon, i));
+}
+function drawWeek(){
+  const t = today();
+  $("week").innerHTML = weekDates().map(d => {
+    const o = dayObj(d), past = d < t, pl = plans[d], has = pl && (pl.route || (pl.draft && pl.draft.jobs && pl.draft.jobs.some(j => j.value)));
+    return `<button class="wk${d === selDay ? " sel" : ""}${d === t ? " today" : ""}${past ? " past" : ""}${has ? " has" : ""}" type="button" role="tab" aria-selected="${d === selDay}" data-day="${d}"
+      aria-label="${DOW(d)} ${fmtDay(d)}${d === t ? ", today" : ""}${past ? ", closed" : ""}${has ? ", has a route" : ""}">
+      <span class="wk-d">${o.toLocaleDateString("en-US", {weekday:"short"})}</span><span class="wk-n">${o.getDate()}</span></button>`;
+  }).join("");
+  const isPast = selDay < t, label = selDay === t ? "Today's jobs" : `${DOW(selDay)}'s jobs`;
+  $("in-h").textContent = label;
+  $("planner").classList.toggle("closed-day", isPast);
+  $("closed-card").hidden = !isPast;
+  if (isPast) drawClosed();
+}
+function selectDay(d){
+  if (d === selDay) return;
+  closeSugg(); selDay = d; loadDay();
+}
+$("week").addEventListener("click", e => { const b = e.target.closest("[data-day]"); if (b) selectDay(b.dataset.day); });
+function drawClosed(){
+  const next = addDays(selDay, 7), entry = (logCache || []).find(e => e.day === selDay);
+  $("closed-card").innerHTML = `<h2>${DOW(selDay)}, ${fmtDay(selDay)} is closed</h2>
+    <p>This day is over. ${DOW(selDay)} opens again next week, on ${fmtDay(next)}.</p>
+    ${entry ? logCard(entry, true) : `<p class="muted">${logLoaded ? "No route was saved for this day." : "Loading the log…"}</p>`}
+    <button class="btn btn-soft" type="button" id="closed-log">Open the Route log</button>`;
+  $("closed-log").addEventListener("click", () => showTab("log"));
+  if (!entry && !logLoaded && !logBusy) loadLog(false);
+}
+
+/* ---- closing past days into the Route log ---- */
+let devId = ""; try { devId = localStorage.getItem("cbs-dev") || ""; if (!devId){ devId = Math.random().toString(36).slice(2, 10); localStorage.setItem("cbs-dev", devId); } } catch(e){ devId = "x"; }
+let logQueue = []; try { logQueue = JSON.parse(localStorage.getItem("cbs-logq") || "[]") || []; } catch(e){ logQueue = []; }
+const storeQueue = () => { try { localStorage.setItem("cbs-logq", JSON.stringify(logQueue)); } catch(e){} };
+function entryFor(day, pl){
+  const r = pl.route, doneSet = new Set(pl.done || []), byId = Object.fromEntries(r.jobs.map(j => [j.id, j]));
+  const stops = r.order.map(id => byId[id]).filter(Boolean).map(j => {
+    const c = findC(j.cust);
+    return {label:j.label, ...(c && c.name ? {name:c.name} : {}), ...(c && c.star ? {star:true} : {}), ...(j.cust ? {cust:j.cust} : {}), done:doneSet.has(j.id)};
+  });
+  return {id:`${day}-${devId}`, day, start:r.start.label, home:!!r.home, stops, done:stops.filter(s => s.done).length, total:stops.length, saved:Date.now()};
+}
+function closePastDays(){
+  const t = today(); let moved = false;
+  Object.keys(plans).forEach(d => {
+    if (d >= t) return;
+    const pl = plans[d];
+    if (pl.route && pl.route.jobs && pl.route.jobs.length){ logQueue = logQueue.filter(e => e.id !== `${d}-${devId}`); logQueue.push(entryFor(d, pl)); }
+    delete plans[d]; moved = true;
+  });
+  if (moved){ storePlans(); storeQueue(); }
+  if (selDay < t && !weekDates().includes(selDay)) selDay = t;
+  sendLog();
+}
+let sendingLog = false;
+async function sendLog(){
+  if (sendingLog || !logQueue.length) return;
+  sendingLog = true;
+  try {
+    while (logQueue.length){
+      const e = logQueue[0];
+      await api("log", {method:"PUT", body:e, timeout:10000});
+      logQueue.shift(); storeQueue();
+      if (logCache){ logCache = [e, ...logCache.filter(x => x.id !== e.id)].sort((a, b) => b.day.localeCompare(a.day)); }
+    }
+  } catch(e){ /* no signal: try again later */ }
+  finally { sendingLog = false; if (!$("log").hidden) drawLog(); if ($("closed-card") && !$("closed-card").hidden) drawClosed(); }
+}
+// a new day starting while the site is open
+let lastDay = today();
+setInterval(() => {
+  if (today() === lastDay) return;
+  const wasToday = selDay === lastDay; lastDay = today();
+  closePastDays(); if (wasToday || selDay < lastDay) { selDay = lastDay; loadDay(); } else drawWeek();
+}, 60000);
 function startSync(){}
 function stopSync(){}
 
@@ -911,10 +1078,10 @@ matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => { 
 
 /* ============ tabs ============ */
 function showTab(t){
-  if (!$("toast").hidden && $("tab-" + (t === "bulk" ? "bulk" : "planner")).getAttribute("aria-selected") !== "true") hideToast();
-  $("planner").hidden = t !== "planner"; $("bulk").hidden = t !== "bulk";
-  $("tab-planner").setAttribute("aria-selected", String(t === "planner"));
-  $("tab-bulk").setAttribute("aria-selected", String(t === "bulk"));
+  if (!["planner","bulk","log"].includes(t)) t = "planner";
+  if (!$("toast").hidden && $("tab-" + t).getAttribute("aria-selected") !== "true") hideToast();
+  ["planner","bulk","log"].forEach(k => { $(k).hidden = t !== k; $("tab-" + k).setAttribute("aria-selected", String(t === k)); });
+  if (t === "log") loadLog(false);
   try { localStorage.setItem("cbs-tab", t); } catch(e){}
   if (t === "bulk"){ if (bmap) bmap.resize(); else drawBulkMap(true); }
   else if (map) map.resize();
@@ -922,6 +1089,51 @@ function showTab(t){
 }
 $("tab-planner").addEventListener("click", () => showTab("planner"));
 $("tab-bulk").addEventListener("click", () => showTab("bulk"));
+$("tab-log").addEventListener("click", () => showTab("log"));
+
+/* ============ route log ============ */
+let logCache = null, logLoaded = false, logHasMore = false, logBusy = false;
+async function loadLog(older){
+  if (logBusy) return; logBusy = true;
+  if (!logCache) drawLog();
+  try {
+    const oldest = older && logCache && logCache.length ? logCache[logCache.length - 1].day : "";
+    const {entries} = await api("log?limit=40" + (oldest ? "&before=" + oldest : ""), {timeout:10000});
+    const byId = new Map((older ? logCache || [] : []).map(e => [e.id, e]));
+    (entries || []).forEach(e => byId.set(e.id, e));
+    logCache = [...byId.values()].sort((a, b) => b.day.localeCompare(a.day) || (b.saved || 0) - (a.saved || 0));
+    logHasMore = (entries || []).length >= 40; logLoaded = true;
+  } catch(e){ /* keep whatever we had */ }
+  finally { logBusy = false; drawLog(); if (!$("closed-card").hidden) drawClosed(); }
+}
+function logCard(e, open){
+  const pct = e.total ? Math.round(e.done / e.total * 100) : 0;
+  return `<details class="log-day"${open ? " open" : ""}><summary>
+      <span class="ld-date">${esc(DOW(e.day))}, ${esc(fmtDay(e.day))}${e.pending ? ' <small class="ld-pend">Saving…</small>' : ""}</span>
+      <span class="ld-sum${e.done === e.total ? " all" : ""}">${e.done} of ${e.total} done</span>
+      <span class="ld-bar" aria-hidden="true"><i style="width:${pct}%"></i></span></summary>
+    <ol class="ld-stops">${e.stops.map(st => `<li class="${st.done ? "y" : "n"}"><span class="ld-mark" aria-label="${st.done ? "Done" : "Not done"}">${st.done ? "✓" : "–"}</span>
+      <span class="ld-t"><b>${st.star ? '<span class="b-star">★</span>' : ""}${esc(st.name || st.label.split(",")[0])}</b>${st.name ? `<small>${esc(st.label.split(",").slice(0, 2).join(","))}</small>` : `<small>${esc(st.label.split(",").slice(1, 3).join(",").trim())}</small>`}</span></li>`).join("")}</ol>
+  </details>`;
+}
+function drawLog(){
+  const list = $("log-list"), pend = logQueue.map(e => ({...e, pending:true}));
+  const all = [...pend, ...(logCache || []).filter(e => !pend.some(p => p.id === e.id))].sort((a, b) => b.day.localeCompare(a.day));
+  $("log-count").textContent = all.length ? `${all.length} day${all.length === 1 ? "" : "s"}` : "";
+  $("log-more").hidden = !logHasMore;
+  if (!all.length){
+    list.innerHTML = `<div class="empty">${logLoaded ? "No finished days yet.<br>When a day ends, its route is saved here with who was serviced." : logBusy ? "Loading…" : "Couldn't load the log. Check your signal."}</div>`;
+    return;
+  }
+  let month = "", html = "";
+  all.forEach((e, i) => {
+    const m = dayObj(e.day).toLocaleDateString("en-US", {month:"long", year:"numeric"});
+    if (m !== month){ html += `${month ? "</div>" : ""}<h3 class="log-month">${esc(m)}</h3><div class="log-group">`; month = m; }
+    html += logCard(e, i === 0);
+  });
+  list.innerHTML = html + "</div>";
+}
+$("log-more").addEventListener("click", () => loadLog(true));
 
 /* ============ address map: the customer book ============ */
 // Add customers one at a time, see them as numbered pins, keep name / notes / schedule / visits for each,
@@ -1267,7 +1479,7 @@ function addToRoute(ids){
   });
   picked.clear(); syncRows(); saveDraft(); storeLocal(); renderBulk(false);
   showTab("planner"); markStale();
-  status(added ? `Added ${added} customer${added > 1 ? "s" : ""} from the address map. Tap Plan route.` : "Those addresses are already in your job list.");
+  status(added ? `Added ${added} customer${added > 1 ? "s" : ""} to ${selDay === today() ? "today's" : DOW(selDay) + "'s"} jobs. Tap Plan route.` : "Those addresses are already in this day's job list.");
 }
 
 // a visit is logged when "Job done" is checked on a stop that came from the customer book
@@ -1396,7 +1608,7 @@ $("clear").addEventListener("click", () => {
   setJobs([]); saveDraft(); status("");
   route = null; done = new Set(); saveMine(); emptyState();
   if (sentIds.size){ sentIds.clear(); storeLocal(); renderBulk(false); }
-  toast("Cleared today's jobs", () => {
+  toast(selDay === today() ? "Cleared today's jobs" : `Cleared ${DOW(selDay)}'s jobs`, () => {
     setJobs(was.jobs); saveDraft();
     route = was.route; done = new Set(was.done); saveMine(); showRoute();
     was.sent.forEach(id => sentIds.add(id)); storeLocal(); renderBulk(false);
@@ -1419,12 +1631,12 @@ document.addEventListener("pointerdown", e => { if (suggFor && !e.target.closest
 // and customer changes wait and send themselves when the signal comes back.
 function showOffline(){ $("offline").hidden = navigator.onLine; }
 addEventListener("offline", showOffline);
-addEventListener("online", () => { showOffline(); syncCust(); });
+addEventListener("online", () => { showOffline(); syncCust(); sendLog(); });
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("/sw.js").catch(() => {});
 function afterSignIn(){
   renderBulk(false); syncCust();
   let t = "planner"; try { t = localStorage.getItem("cbs-tab") || t; } catch(e){}
-  showTab(t === "bulk" ? "bulk" : "planner"); showOffline();
+  showTab(t); showOffline(); sendLog();
 }
 
 /* ============ start up ============ */

@@ -39,7 +39,9 @@ async function ensureTables(db) {
   await db.batch([
     db.prepare("CREATE TABLE IF NOT EXISTS days (day TEXT PRIMARY KEY, data TEXT NOT NULL, updated INTEGER NOT NULL)"),
     db.prepare("CREATE TABLE IF NOT EXISTS marks (day TEXT NOT NULL, job TEXT NOT NULL, at INTEGER NOT NULL, PRIMARY KEY (day, job))"),
-    db.prepare("CREATE TABLE IF NOT EXISTS customers (k INTEGER PRIMARY KEY, data TEXT NOT NULL, updated INTEGER NOT NULL)")
+    db.prepare("CREATE TABLE IF NOT EXISTS customers (k INTEGER PRIMARY KEY, data TEXT NOT NULL, updated INTEGER NOT NULL)"),
+    db.prepare("CREATE TABLE IF NOT EXISTS route_log (id TEXT PRIMARY KEY, day TEXT NOT NULL, data TEXT NOT NULL, at INTEGER NOT NULL)"),
+    db.prepare("CREATE INDEX IF NOT EXISTS route_log_day ON route_log (day)")
   ]);
   tablesReady = true;
 }
@@ -238,6 +240,27 @@ async function saveCustomers(request, env) {
   return json({ list, updated });
 }
 
+/* ---------------- route log: every finished day, shared by every phone ---------------- */
+async function getLog(url, env) {
+  await ensureTables(env.DB);
+  const before = url.searchParams.get("before"), limit = Math.min(100, Math.max(1, +url.searchParams.get("limit") || 40));
+  const q = validDay(before)
+    ? env.DB.prepare("SELECT data FROM route_log WHERE day < ? ORDER BY day DESC, at DESC LIMIT ?").bind(before, limit)
+    : env.DB.prepare("SELECT data FROM route_log ORDER BY day DESC, at DESC LIMIT ?").bind(limit);
+  const rows = (await q.all()).results || [];
+  return json({ entries: rows.map(r => JSON.parse(r.data)) });
+}
+async function saveLog(request, env) {
+  const e = await request.json().catch(() => null);
+  if (!e || typeof e.id !== "string" || e.id.length > 80 || !validDay(e.day) || !Array.isArray(e.stops)) return fail(400, "Bad log entry");
+  const data = JSON.stringify(e);
+  if (data.length > 100000) return fail(413, "Log entry too large");
+  await ensureTables(env.DB);
+  await env.DB.prepare("INSERT INTO route_log (id, day, data, at) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET day = excluded.day, data = excluded.data, at = excluded.at")
+    .bind(e.id, e.day, data, Date.now()).run();
+  return json({ ok: true });
+}
+
 /* ---------------- entry point ---------------- */
 export async function onRequest(ctx) {
   const { request, env } = ctx;
@@ -265,6 +288,8 @@ export async function onRequest(ctx) {
     if (path === "mark" && method === "POST") return await mark(request, url, env);
     if (path === "customers" && method === "GET") return await getCustomers(env);
     if (path === "customers" && method === "PUT") return await saveCustomers(request, env);
+    if (path === "log" && method === "GET") return await getLog(url, env);
+    if (path === "log" && method === "PUT") return await saveLog(request, env);
     return fail(404, "Not found");
   } catch (e) {
     return fail(500, "Something went wrong on the server. Try again.");
