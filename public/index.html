@@ -180,7 +180,17 @@ textarea{width:100%;min-height:150px;font:inherit;font-size:16px;line-height:1.4
 .b-ic:hover{background:var(--soft);color:var(--ink)}
 .b-ic.on{color:var(--gold)}
 .b-ic.on svg{fill:currentColor}
-.b-editor{flex:1 1 100%;display:grid;gap:14px;margin:6px 0 4px;padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:12px;cursor:auto;box-shadow:0 1px 2px rgba(34,32,29,.04)}
+.sheet-wrap{position:fixed;inset:0;z-index:60;background:rgba(34,32,29,.38);display:grid;place-items:center;overflow-y:auto;overscroll-behavior:contain;
+  padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.sheet{width:min(460px,100%);max-height:calc(100dvh - 32px);overflow-y:auto;overscroll-behavior:contain;background:var(--surface);border-radius:18px;box-shadow:0 24px 60px rgba(34,32,29,.25)}
+body.sheet-open{overflow:hidden}
+.sheet-h{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:12px;padding:16px 16px 14px 20px;background:var(--surface);border-bottom:1px solid var(--line)}
+.sheet-t{display:flex;flex-direction:column;min-width:0;flex:1;line-height:1.3}
+.sheet-t b{font-family:var(--display);font-size:18px;overflow-wrap:anywhere}
+.sheet-t span{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.sheet-x{appearance:none;border:0;background:var(--soft);color:var(--ink);width:36px;height:36px;border-radius:50%;font-size:22px;line-height:1;cursor:pointer;flex:none}
+.sheet-x:hover{background:var(--line)}
+.b-editor{display:grid;gap:14px;padding:18px 20px 20px}
 .b-editor .f{display:grid;gap:5px;font-size:13px;font-weight:700;color:var(--ink);border:0;margin:0;padding:0;min-width:0}
 .b-editor legend{padding:0;margin:0 0 5px}
 .b-editor input[type=text],.b-editor input[type=date],.b-editor textarea,.b-editor select{width:100%;min-height:44px;margin:0;font:inherit;font-size:16px;font-weight:400;color:var(--ink);background-color:var(--field);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
@@ -216,7 +226,6 @@ textarea{width:100%;min-height:150px;font:inherit;font-size:16px;line-height:1.4
 .b-next{font-weight:700;color:var(--olive-ink);background:var(--field);border:1px solid var(--line)}
 .b-meta > .b-last{color:var(--muted);font-weight:600;padding-inline:2px}
 .b-note{font-size:12.5px;color:var(--muted);font-style:italic;margin-top:2px;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.b-list:has(.b-editor){max-height:none}   /* let the open editor show in full */
 .b-tools select{background-color:transparent;font-size:14px;font-weight:600;color:var(--muted);height:38px;min-height:0;padding:0 34px 0 14px;border-radius:999px;background-position:right 12px center}
 .b-sync{margin:10px 0 0;font-size:13px;color:var(--muted)}
 .b-sync:empty{display:none}
@@ -357,6 +366,11 @@ textarea{width:100%;min-height:150px;font:inherit;font-size:16px;line-height:1.4
     </section>
   </div>
 </main>
+
+<!-- customer editor card (opens over the page) -->
+<div class="sheet-wrap" id="cust-sheet" hidden>
+  <div class="sheet" id="cust-sheet-card" role="dialog" aria-modal="true" aria-labelledby="sheet-title"></div>
+</div>
 
 <footer class="site-foot" id="foot"><div class="wrap">Chesapeake Bay Support LLC<button class="btn-link" id="signout" type="button" hidden>Sign out</button></div></footer>
 
@@ -704,7 +718,7 @@ $("tab-bulk").addEventListener("click", () => showTab("bulk"));
 // and send picks to the route planner. Backed up to the site's database and shared by every phone.
 // Each customer: {id, born, mod, text, label, lat, lon, street, name, notes, star, freq, days:[0-6], hist:["YYYY-MM-DD"], bad, del}
 let cust = [], picked = new Set(), sentIds = new Set(), bmap = null, bmarks = [], bulkBusy = false;
-let editing = null, draft = null, focusEditor = false;
+let editing = null, draft = null;
 const DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"], WEEK = [1,2,3,4,5,6,0];
 const FREQS = [[0,"No schedule"],[7,"Every week"],[14,"Every 2 weeks"],[21,"Every 3 weeks"],[28,"Every 4 weeks"],[30,"Every month"]];
 const FREQ_SHORT = {7:"Weekly",14:"Every 2 wks",21:"Every 3 wks",28:"Every 4 wks",30:"Monthly"};
@@ -758,7 +772,7 @@ async function syncCust(){
     const rm = new Map(remote.map(c => [c.id, c.mod || 0]));
     if (cust.some(c => !rm.has(c.id) || (c.mod || 0) > rm.get(c.id))) dirty = true;
     lastSyncOk = true; storeLocal();
-    if (JSON.stringify(cust) !== before){ if (editing) needsRender = true; else renderBulk(false); if (route) showRoute(); }
+    if (JSON.stringify(cust) !== before){ renderBulk(false); if (route) showRoute(); }
   } catch(e){ if (sending) dirty = true; if (!(e instanceof NeedPin)) lastSyncOk = false; }
   finally {
     syncing = false; showSync();
@@ -838,9 +852,10 @@ function renderList(){
   $("bulk").classList.toggle("has-pins", !!ok.length);
   const shown = ok.map((c, i) => ({c, n:i+1})).filter(({c}) => passes(c) &&
     (!q || [c.name, nameOf(c), c.text, c.notes].some(t => t && t.toLowerCase().includes(q))));
-  $("bulk-list").innerHTML = shown.length ? shown.map(({c, n}) => row(c, n)).join("")
+  const list = $("bulk-list"), keep = list.scrollTop;          // redraws must not jump the list back to the top
+  list.innerHTML = shown.length ? shown.map(({c, n}) => row(c, n)).join("")
     : `<li class="b-empty">${!ok.length ? "None of these were found yet." : "No customers match these filters."}</li>`;
-  if (focusEditor){ focusEditor = false; const f = $("bulk-list").querySelector(".b-editor [name=name]"); if (f){ f.focus({preventScroll:true}); f.setSelectionRange(f.value.length, f.value.length); } }
+  list.scrollTop = keep;
   $("bulk-bad").innerHTML = bad.length ? `<div class="b-bad"><div class="b-bad-h"><b>⚠ Not found (${bad.length})</b><button class="btn-link" type="button" id="bulk-dropbad">Remove these</button></div>` +
     `<ul>${bad.map(c => `<li>${esc(c.text)}</li>`).join("")}</ul></div>` : "";
   updatePicks(); showSync();
@@ -859,11 +874,13 @@ function row(c, n){
     `<button class="b-ic" type="button" data-edit="${id}" aria-label="Edit customer" title="Edit customer">${IC.edit}</button>` +
     `<button class="b-ic" type="button" data-show="${id}" aria-label="Show ${n} on the map" title="Show on map">${IC.show}</button></div>` +
     (meta || dueTag || c.notes ? `<div class="b-sub">${meta || dueTag ? `<span class="b-meta">${dueTag}${meta}</span>` : ""}${c.notes ? `<span class="b-note">${esc(c.notes)}</span>` : ""}</div>` : "") +
-    `${editing === c.id ? editor(c) : ""}</li>`;
+    `</li>`;
 }
 function editor(c){
-  const d = draft, id = esc(c.id);
-  return `<form class="b-editor" data-for="${id}" autocomplete="off">
+  const d = draft, id = esc(c.id), n = onMap().indexOf(c) + 1;
+  return `<div class="sheet-h"><span class="b-num">${n || ""}</span><div class="sheet-t"><b id="sheet-title">${esc(c.name || "Edit customer")}</b><span>${esc(nameOf(c))}</span></div>` +
+    `<button class="sheet-x" type="button" data-cancel aria-label="Close without saving">×</button></div>
+  <form class="b-editor" data-for="${id}" autocomplete="off">
     <label class="f">Name<input type="text" name="name" maxlength="80" value="${esc(d.name)}" placeholder="Customer name" enterkeyhint="next"></label>
     <label class="f">Notes<textarea name="notes" rows="2" maxlength="500" placeholder="Gate code, dog in yard, mow height…">${esc(d.notes)}</textarea></label>
     <label class="f">How often<select name="freq">${FREQS.map(([v, t]) => `<option value="${v}"${+d.freq === v ? " selected" : ""}>${t}</option>`).join("")}</select></label>
@@ -945,11 +962,20 @@ function logVisit(custId, on){
 }
 
 /* ---- the customer editor ---- */
+let sheetFrom = null;
+function renderSheet(focus){
+  const wrap = $("cust-sheet"), c = findC(editing);
+  if (!c){ wrap.hidden = true; $("cust-sheet-card").innerHTML = ""; document.body.classList.remove("sheet-open"); return; }
+  const card = $("cust-sheet-card"), keep = card.scrollTop;
+  card.innerHTML = editor(c); card.scrollTop = keep;
+  wrap.hidden = false; document.body.classList.add("sheet-open");
+  if (focus){ card.scrollTop = 0; const f = card.querySelector("[name=name]"); f.focus({preventScroll:true}); f.setSelectionRange(f.value.length, f.value.length); }
+}
 function openEditor(id){
   const c = findC(id); if (!c) return;
-  editing = id; focusEditor = true;
+  editing = id; sheetFrom = document.activeElement;
   draft = {name:c.name || "", notes:c.notes || "", freq:c.freq || 0, days:[...(c.days || [])], hist:[...(c.hist || [])]};
-  renderList();
+  renderSheet(true);
 }
 function closeEditor(save){
   const c = findC(editing);
@@ -961,7 +987,8 @@ function closeEditor(save){
     draft.hist.length ? c.hist = [...draft.hist].sort().reverse() : delete c.hist;
     touch(c); saveCust(); drawBulkMap(false); if (route) showRoute();
   }
-  editing = null; draft = null; renderList();
+  editing = null; draft = null; renderSheet(false); renderList();
+  if (sheetFrom && document.contains(sheetFrom)) sheetFrom.focus({preventScroll:true}); sheetFrom = null;
 }
 function readEditor(form){
   draft.name = form.elements.name.value; draft.notes = form.elements.notes.value; draft.freq = +form.elements.freq.value;
@@ -977,32 +1004,32 @@ $("bulk-all").addEventListener("click", () => { $("bulk-list").querySelectorAll(
 $("bulk-addsel").addEventListener("click", () => addToRoute([...picked]));
 $("bulk-unsel").addEventListener("click", () => { picked.clear(); updatePicks(); });
 $("bulk-remove").addEventListener("click", () => bury(new Set(picked)));
-$("bulk-list").addEventListener("change", e => {
-  const c = e.target.closest("input[data-id]"); if (c){ togglePick(c.dataset.id); return; }
-  const f = e.target.closest(".b-editor"); if (f) readEditor(f);
+$("bulk-list").addEventListener("change", e => { const c = e.target.closest("input[data-id]"); if (c) togglePick(c.dataset.id); });
+const sheet = $("cust-sheet");
+sheet.addEventListener("change", e => { const f = e.target.closest(".b-editor"); if (f) readEditor(f); });
+sheet.addEventListener("input", e => { const f = e.target.closest(".b-editor"); if (f) readEditor(f); });
+sheet.addEventListener("submit", e => { e.preventDefault(); const f = e.target.closest(".b-editor"); if (f) readEditor(f); closeEditor(true); });
+sheet.addEventListener("keydown", e => {
+  if (e.key === "Escape"){ e.preventDefault(); closeEditor(false); return; }
+  if (e.key === "Enter" && e.target.name === "visit"){ e.preventDefault(); sheet.querySelector("[data-addvisit]").click(); }
 });
-$("bulk-list").addEventListener("input", e => { const f = e.target.closest(".b-editor"); if (f) readEditor(f); });
-$("bulk-list").addEventListener("submit", e => { e.preventDefault(); const f = e.target.closest(".b-editor"); if (f) readEditor(f); closeEditor(true); });
-$("bulk-list").addEventListener("keydown", e => {
-  if (!e.target.closest(".b-editor")) return;
-  if (e.key === "Escape") closeEditor(false);
-  if (e.key === "Enter" && e.target.name === "visit"){ e.preventDefault(); e.target.closest(".b-editor").querySelector("[data-addvisit]").click(); }
+sheet.addEventListener("click", e => {
+  const t = e.target, form = sheet.querySelector(".b-editor");
+  if (t.closest("[data-cancel]")){ closeEditor(false); return; }
+  if (form && t.closest("[data-addvisit]")){
+    readEditor(form); const v = form.elements.visit.value;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(v) && !draft.hist.includes(v)){ draft.hist = [...draft.hist, v].sort().reverse(); renderSheet(false); }
+    return;
+  }
+  const un = t.closest("[data-unvisit]");
+  if (form && un){ readEditor(form); draft.hist = draft.hist.filter(h => h !== un.dataset.unvisit); renderSheet(false); }
 });
 $("bulk-list").addEventListener("click", e => {
   const t = e.target;
   const st = t.closest("[data-star]");
   if (st){ const c = findC(st.dataset.star); if (c){ c.star ? delete c.star : c.star = true; touch(c); saveCust(); renderList(); drawBulkMap(false); updatePicks(); if (route) showRoute(); } return; }
   const ed = t.closest("[data-edit]");
-  if (ed){ editing === ed.dataset.edit ? closeEditor(false) : openEditor(ed.dataset.edit); return; }
-  if (t.closest("[data-cancel]")){ closeEditor(false); return; }
-  const form = t.closest(".b-editor");
-  if (form && t.closest("[data-addvisit]")){
-    readEditor(form); const v = form.elements.visit.value;
-    if (/^\d{4}-\d{2}-\d{2}$/.test(v) && !draft.hist.includes(v)){ draft.hist = [...draft.hist, v].sort().reverse(); renderList(); }
-    return;
-  }
-  const un = t.closest("[data-unvisit]");
-  if (form && un){ readEditor(form); draft.hist = draft.hist.filter(h => h !== un.dataset.unvisit); renderList(); return; }
+  if (ed){ openEditor(ed.dataset.edit); return; }
   const s = t.closest("[data-show]"); if (!s || !bmap) return;
   const c = findC(s.dataset.show); if (!c) return;
   bmap.flyTo({center:[c.lon, c.lat], zoom:15});
