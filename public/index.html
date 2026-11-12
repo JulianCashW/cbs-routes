@@ -128,7 +128,8 @@ input[type=text]:focus,input[type=password]:focus,input[type=search]:focus,input
 .status.err{color:var(--ink);font-weight:700}
 
 /* route */
-.stale{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14px;font-weight:600;margin:0 0 12px}
+.stale{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--gold-tint);border:1px solid var(--gold);border-radius:12px;padding:8px 8px 8px 14px;font-size:14px;font-weight:600;margin:0 0 12px}
+.stale .stale-go{width:auto;min-height:36px;padding:6px 14px;font-size:14px;flex:none}
 .actions{display:grid;gap:8px;margin-bottom:12px}
 .map{height:300px;border-radius:12px;border:1px solid var(--line);overflow:hidden;margin:0 0 6px;background:var(--soft)}
 .credit{font-size:11px;color:var(--muted);margin:0 0 14px;text-align:right}
@@ -188,7 +189,7 @@ input[type=date]{appearance:none;-webkit-appearance:none;cursor:pointer}
 input[type=date]::-webkit-calendar-picker-indicator{opacity:.55;cursor:pointer}
 
 /* week strip (route planner) */
-#planner .week{grid-column:1/-1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+#planner .week{grid-column:1/-1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;padding-top:6px}
 .wk{appearance:none;position:relative;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:8px 0 11px;display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;min-width:0}
 .wk-d{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .wk-n{font-family:var(--display);font-size:19px;font-weight:700;line-height:1.1}
@@ -200,8 +201,8 @@ input[type=date]::-webkit-calendar-picker-indicator{opacity:.55;cursor:pointer}
 .wk.sel{background:var(--accent);border-color:var(--accent-edge);color:var(--on-accent);box-shadow:none}
 .wk.sel .wk-d{color:var(--on-accent)}
 .wk.past.sel{background:var(--soft);color:var(--ink);border-style:solid}
-.wk.has::after{content:"";position:absolute;bottom:5px;left:50%;margin-left:-2.5px;width:5px;height:5px;border-radius:50%;background:var(--olive-ink)}
-.wk.sel.has::after{background:var(--on-accent)}
+.wk-c{position:absolute;top:-6px;right:-4px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--olive-ink);color:#fff;font:700 10.5px/18px var(--body);text-align:center;box-shadow:0 0 0 2px var(--bg)}
+.wk.sel .wk-c{background:var(--ink);color:var(--on-deep)}
 #planner.closed-day > section.panel:not(.closed-card){display:none}
 #planner .closed-card{grid-column:1/-1}
 .closed-card h2{margin:0 0 6px}
@@ -301,9 +302,10 @@ body.has-selbar .site-foot{padding-bottom:96px}
 .toast-undo:hover{background:var(--accent-edge)}
 @media (prefers-reduced-motion: no-preference){.toast.show{animation:rise .18s ease-out}}
 .one-field{margin-bottom:26px}
+.b-first{margin:14px 0 0;padding:12px 14px;border-radius:12px;background:var(--soft);color:var(--muted);font-size:14px;line-height:1.45}
 .b-tools{display:grid;gap:10px;margin:0 0 14px}
 .b-find-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
-.b-find-row select{height:auto;border-radius:10px;font-size:15px;color:var(--ink);background-color:var(--field);padding:0 36px 0 12px}
+.b-find-row select{width:128px;height:auto;border-radius:10px;font-size:15px;color:var(--ink);background-color:var(--field);padding:0 36px 0 12px}
 .b-chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -2px;padding:2px}
 .b-chips::-webkit-scrollbar{display:none}
 .b-chips > *{flex:none}
@@ -357,10 +359,10 @@ body.sheet-open{overflow:hidden}
 .b-editor select{padding-right:40px}
 .b-editor textarea{min-height:64px;resize:vertical}
 .b-editor input:focus,.b-editor textarea:focus,.b-editor select:focus{border-color:var(--accent-edge)}
-.b-days{display:flex;flex-wrap:wrap;gap:6px}
-.b-editor .b-day{position:relative;display:inline-block;flex:none;cursor:pointer}
+.b-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.b-editor .b-day{position:relative;display:block;min-width:0;cursor:pointer}
 .b-day input{position:absolute;opacity:0;width:1px;height:1px}
-.b-day span{display:inline-block;min-width:46px;text-align:center;padding:6px 10px;border:1px solid var(--line);border-radius:999px;font-size:13px;font-weight:600;background:var(--field);cursor:pointer}
+.b-day span{display:block;text-align:center;padding:7px 0;border:1px solid var(--line);border-radius:999px;font-size:13px;font-weight:600;background:var(--field);cursor:pointer}
 .b-day input:checked + span{background:var(--accent);border-color:var(--accent-edge);color:var(--on-accent)}
 .b-day input:focus-visible + span{outline:3px solid var(--accent-edge);outline-offset:2px}
 .b-visits{display:flex;flex-wrap:wrap;gap:6px;max-height:120px;overflow:auto;margin-bottom:8px}
@@ -371,7 +373,7 @@ body.sheet-open{overflow:hidden}
 .b-addvisit{display:flex;gap:8px;align-items:stretch}
 .b-addvisit .btn{flex:none;white-space:nowrap}
 .b-addvisit input{flex:1;min-width:0}
-.b-ed-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-top:2px}
+.b-ed-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;position:sticky;bottom:0;z-index:1;margin:0 -20px -20px;padding:12px 20px calc(14px + env(safe-area-inset-bottom,0px));background:var(--surface);border-top:1px solid var(--line)}
 .b-ed-btns .btn{width:100%;min-height:44px}
 .b-editor .btn{padding:9px 16px;font-size:14px}
 .b-editor .btn-main{width:auto;min-height:0;padding:9px 22px}
@@ -421,7 +423,7 @@ body.sheet-open{overflow:hidden}
 .area-layer{position:absolute;inset:0;z-index:2;cursor:crosshair;touch-action:none;border-radius:12px;background:rgba(34,32,29,.06);outline:2px dashed var(--olive-ink);outline-offset:-2px}
 .area-box{position:absolute;border:2px solid var(--olive-ink);background:rgba(165,172,120,.22);border-radius:4px;pointer-events:none}
 .area-hint{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);margin:0;padding:6px 12px;border-radius:999px;background:var(--surface);color:var(--ink);font-size:13px;font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.15);white-space:nowrap;pointer-events:none}
-.map-key{display:flex;flex-wrap:wrap;gap:4px 14px;margin:8px 4px 0;font-size:12px;color:var(--muted);font-weight:600}
+.map-key{display:flex;flex-wrap:wrap;gap:4px 10px;margin:8px 2px 0;font-size:11.5px;color:var(--muted);font-weight:600}
 .map-key span{display:inline-flex;align-items:center;gap:6px}
 .map-key i{width:10px;height:10px;border-radius:50%;display:inline-block}
 .map-key .k-ok{background:#4f8a4b}.map-key .k-soon{background:#e8c24c}.map-key .k-due{background:#d08a1e}.map-key .k-late{background:#b94a1c}
@@ -506,6 +508,7 @@ body.sheet-open{overflow:hidden}
           <button class="btn btn-main" id="one-go" type="button">Add</button>
         </div>
         <div class="status" id="bulk-status" role="status"></div>
+        <p class="b-first" id="bulk-first" hidden>Type an address and pick it from the list. Each customer gets a numbered pin, and you can add names, notes and a schedule with the pencil.</p>
       </div>
       <div id="bulk-index" hidden>
         <div class="b-tools">
@@ -548,7 +551,7 @@ body.sheet-open{overflow:hidden}
         <div class="area-layer" id="area-layer" hidden><div class="area-box" id="area-box" hidden></div><p class="area-hint">Drag across the pins you want</p></div>
       </div>
       <div class="map-key" aria-label="Pin colors">
-        <span><i class="k-ok"></i>Recently done</span><span><i class="k-soon"></i>Upcoming</span><span><i class="k-due"></i>Due</span><span><i class="k-late"></i>Overdue</span><span><i class="k-star"></i>Premium</span>
+        <span><i class="k-ok"></i>Done</span><span><i class="k-soon"></i>Upcoming</span><span><i class="k-due"></i>Due</span><span><i class="k-late"></i>Overdue</span><span><i class="k-star"></i>Premium</span>
       </div>
       <p class="credit">Tap a pin to select it · Addresses by <a href="https://www.geoapify.com/" target="_blank" rel="noopener">Geoapify</a></p>
     </section>
@@ -818,8 +821,9 @@ const planFor = d => plans[d] || (plans[d] = {});
 function saveDraft(){
   planFor(selDay).draft = {start:{value:$("start").value, p:placeOf($("start"))},
     jobs:boxes().map(b => ({value:b.value, p:placeOf(b)})), home:$("home").checked, tolls:$("tolls").checked};
-  tidyPlan(selDay); storePlans();
+  tidyPlan(selDay); storePlans(); if ($("week").children.length) drawWeekSoon();
 }
+let weekTimer = 0; const drawWeekSoon = () => { clearTimeout(weekTimer); weekTimer = setTimeout(drawWeek, 150); };
 function loadDraft(){ return (plans[selDay] || {}).draft || null; }
 function saveMine(){ const pl = planFor(selDay); pl.route = route; pl.done = [...done]; tidyPlan(selDay); storePlans(); }
 function loadMine(){ const pl = plans[selDay]; return pl && pl.route ? pl : null; }
@@ -909,11 +913,11 @@ function showRoute(){
   const row = (cls, attrs, name, note) => `<li class="${cls}"${attrs}><span class="rail"><i></i></span><b>${name}</b><small>${note}</small></li>`;
 
   $("out").innerHTML =
-    `<div class="stale" id="stale" hidden>Your jobs changed. Tap Plan route to update the order.</div>
+    `<div class="stale" id="stale" hidden><span>Your jobs changed since this route was planned.</span><button class="btn btn-main stale-go" type="button" id="stale-go">Plan again</button></div>
      <div class="actions">${links}</div>
      <div class="map" id="map" role="img" aria-label="Map of today's route"></div>
      <p class="credit">Addresses and routes by <a href="https://www.geoapify.com/" target="_blank" rel="noopener">Geoapify</a></p>
-     <ol class="glance" aria-label="Route by street">${row("g-home","","HQ","Start")}${stops.map((j, i) => row("", ` data-id="${esc(j.id)}"`, esc(streetOf(j)) + (findC(j.cust)?.star ? ' <span class="star-tag" aria-label="Premium">★</span>' : ""), "Stop " + (i+1))).join("")}${endsHome ? row("g-home","","HQ","End") : ""}</ol>
+     <ol class="glance" aria-label="Route by street">${row("g-home","","HQ","Start")}${stops.map((j, i) => row("", ` data-id="${esc(j.id)}"`, esc(findC(j.cust)?.name || streetOf(j)) + (findC(j.cust)?.star ? ' <span class="star-tag" aria-label="Premium">★</span>' : ""), "Stop " + (i+1))).join("")}${endsHome ? row("g-home","","HQ","End") : ""}</ol>
      <ol class="stops"><li class="home start"><div class="home-ic">${HOUSE}</div><div class="stop-body"><div class="addr">Start at HQ</div><div class="sub">${esc(route.start.label)}</div></div></li>${stops.map((j, i) =>
         `<li data-id="${esc(j.id)}"${findC(j.cust)?.star ? ' class="prem"' : ""}><div class="num">${i+1}</div><div class="stop-body">${stopText(j)}` +
         `<div class="stop-acts"><label class="done-box"><input type="checkbox" id="done-${i+1}" data-id="${esc(j.id)}"> Job done</label>${waze(j, "stop " + (i+1))}</div></div></li>`).join("")}
@@ -922,11 +926,12 @@ function showRoute(){
      ${route.missed && route.missed.length ? `<p class="missed">⚠ ${route.missed.length} stop${route.missed.length > 1 ? "s" : ""} couldn't be reached by road and ${route.missed.length > 1 ? "were" : "was"} left off. Check ${route.missed.length > 1 ? "those addresses" : "that address"}.</p>` : ""}`;
 
   $("out").querySelectorAll(".done-box input").forEach(c => c.addEventListener("change", () => toggleDone(c.dataset.id, c.checked)));
+  $("stale-go").addEventListener("click", plan);
   if (selDay !== today()){                  // check-offs open on the day itself
     $("out").querySelectorAll(".done-box").forEach(l => { l.classList.add("wait"); l.title = `Check-offs open on ${DOW(selDay)}`; l.querySelector("input").disabled = true; });
   }
   applyDone(); markStale();
-  drawMap(stops, endsHome);
+  drawMap(stops, endsHome); keepAwake();
 }
 
 // check marks: shown on the list, the overview, and the map; Waze locks on finished stops
@@ -1006,9 +1011,10 @@ function drawWeek(){
   const t = today();
   $("week").innerHTML = weekDates().map(d => {
     const o = dayObj(d), past = d < t, pl = plans[d], has = pl && (pl.route || (pl.draft && pl.draft.jobs && pl.draft.jobs.some(j => j.value)));
+    const count = !pl ? 0 : pl.draft && pl.draft.jobs ? pl.draft.jobs.filter(j => j.value && j.value.trim()).length : pl.route ? pl.route.jobs.length : 0;
     return `<button class="wk${d === selDay ? " sel" : ""}${d === t ? " today" : ""}${past ? " past" : ""}${has ? " has" : ""}" type="button" role="tab" aria-selected="${d === selDay}" data-day="${d}"
-      aria-label="${DOW(d)} ${fmtDay(d)}${d === t ? ", today" : ""}${past ? ", closed" : ""}${has ? ", has a route" : ""}">
-      <span class="wk-d">${o.toLocaleDateString("en-US", {weekday:"short"})}</span><span class="wk-n">${o.getDate()}</span></button>`;
+      aria-label="${DOW(d)} ${fmtDay(d)}${d === t ? ", today" : ""}${past ? ", closed" : ""}${count ? `, ${count} stop${count === 1 ? "" : "s"}` : ""}">
+      <span class="wk-d">${o.toLocaleDateString("en-US", {weekday:"short"})}</span><span class="wk-n">${o.getDate()}</span>${count && !past ? `<span class="wk-c">${count}</span>` : ""}</button>`;
   }).join("");
   const isPast = selDay < t, label = selDay === t ? "Today's jobs" : `${DOW(selDay)}'s jobs`;
   $("in-h").textContent = label;
@@ -1079,6 +1085,17 @@ setInterval(() => {
 function startSync(){}
 function stopSync(){}
 
+/* ---- keep the phone's screen on while today's route is open ---- */
+let wake = null;
+async function keepAwake(){
+  const want = document.visibilityState === "visible" && !$("app").hidden && !$("planner").hidden && selDay === today() && !!route;
+  try {
+    if (want && !wake && navigator.wakeLock){ wake = await navigator.wakeLock.request("screen"); wake.addEventListener("release", () => { wake = null; }); }
+    else if (!want && wake){ await wake.release(); wake = null; }
+  } catch(e){ wake = null; }
+}
+document.addEventListener("visibilitychange", keepAwake);
+
 /* ============ theme: match my phone → dark → light ============ */
 const THEMES = {
   auto:{label:"Theme: match my phone", icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>'},
@@ -1101,6 +1118,7 @@ function showTab(t){
   if (!$("toast").hidden && $("tab-" + t).getAttribute("aria-selected") !== "true") hideToast();
   ["planner","bulk","log"].forEach(k => { $(k).hidden = t !== k; $("tab-" + k).setAttribute("aria-selected", String(t === k)); });
   if (t === "log") loadLog(false);
+  setTimeout(keepAwake, 0);
   try { localStorage.setItem("cbs-tab", t); } catch(e){}
   if (t === "bulk"){ if (bmap) bmap.resize(); else drawBulkMap(true); }
   else if (map) map.resize();
@@ -1197,7 +1215,7 @@ function dueOf(c){
   const next = nextServiceDay(last ? addDays(last, c.freq) : t, c.days), wait = daysFrom(t, next);
   if (wait < 0) return {due:true, late:true, next, text:"Overdue"};
   if (wait === 0) return {due:true, next, text:"Due today"};
-  if (wait <= 2) return {due:false, soon:true, next, text:"Upcoming · " + (wait === 1 ? "tomorrow" : dayObj(next).toLocaleDateString("en-US", {weekday:"short"}))};
+  if (wait <= 2) return {due:false, soon:true, next, text:"Upcoming · " + dayObj(next).toLocaleDateString("en-US", {weekday:"short"})};
   return {due:false, next, text:"Next " + fmtDay(next)};
 }
 
@@ -1344,6 +1362,7 @@ function renderList(){
   const ok = onMap(), bad = live().filter(c => c.bad), q = $("bulk-find").value.trim().toLowerCase();
   $("bulk-count").textContent = ok.length ? `${ok.length} on map` : "";
   $("bulk-index").hidden = !live().length;
+  $("bulk-first").hidden = !!live().length;
   $("bulk").classList.toggle("has-pins", !!ok.length);
   const shown = ok.map((c, i) => ({c, n:i+1})).filter(({c}) => passes(c) &&
     (!q || [c.name, nameOf(c), c.text, c.notes].some(t => t && t.toLowerCase().includes(q))));
@@ -1568,6 +1587,11 @@ $("bulk-addsel").addEventListener("click", () => {
   const first = $("dp-days").querySelector(".dp-day:not(:disabled)"); if (first) first.focus();
 });
 $("dp-cancel").addEventListener("click", () => $("bulk-sel").classList.remove("picking"));
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape" || !$("cust-sheet").hidden) return;
+  if ($("bulk-sel").classList.contains("picking")) $("bulk-sel").classList.remove("picking");
+  else if (areaOn) setArea(false);
+});
 $("dp-days").addEventListener("click", e => {
   const b = e.target.closest("[data-day]"); if (!b || b.disabled) return;
   const ids = [...picked]; $("bulk-sel").classList.remove("picking");
