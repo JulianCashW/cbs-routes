@@ -21,7 +21,7 @@
   --body:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   color-scheme:light;
 }
-*{box-sizing:border-box}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 [hidden]{display:none!important}
@@ -56,6 +56,18 @@ input[type=text]:focus,input[type=password]:focus,input[type=search]:focus,input
 .sugg li b{display:block;font-weight:600;font-size:15px}
 .sugg li span{font-size:13px;color:var(--muted)}
 .sugg li[aria-selected="true"],.sugg li:hover{background:var(--soft)}
+.one-row{display:flex;gap:8px}
+.one-row .addr-box{flex:1}
+.one-row .btn-main{width:auto;flex:none;padding:0 22px}
+.paste{margin-top:14px;border-top:1px solid var(--line);padding-top:4px}
+.paste summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:6px;padding:10px 0;font-size:14px;font-weight:600;color:var(--muted);width:max-content;max-width:100%}
+.paste summary::-webkit-details-marker{display:none}
+.paste summary::before{content:"";width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);margin-right:4px;transition:transform .15s}
+.paste[open] summary::before{transform:rotate(45deg)}
+.paste summary:hover{color:var(--ink)}
+.paste[open]{padding-bottom:2px}
+@keyframes flash{from{background:var(--sky)}}
+.b-row.flash{animation:flash 1.6s ease-out}
 .jobs{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .jobs > li{display:grid;grid-template-columns:24px minmax(0,1fr);gap:8px;align-items:center}
 .jn{font-family:var(--display);font-weight:600;font-size:16px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
@@ -313,11 +325,20 @@ body.sheet-open{overflow:hidden}
   <div class="wrap" id="bulk" role="tabpanel" aria-labelledby="tab-bulk" hidden>
     <section class="panel" aria-labelledby="bulk-h">
       <div class="panel-h"><h2 id="bulk-h">Addresses</h2><span class="progress" id="bulk-count"></span></div>
-      <div class="field">
-        <label class="lbl" for="bulk-in">Paste addresses, one per line</label>
-        <textarea id="bulk-in" rows="6" placeholder="123 Main St, Chesapeake, VA&#10;456 Oak Ave, Norfolk, VA"></textarea>
-        <div class="row-btns"><button class="btn btn-main" id="bulk-go" type="button">Put on map</button></div>
+      <div class="field one-field">
+        <label class="lbl" for="one-in">Add a customer</label>
+        <div class="one-row">
+          <div class="addr-box"><input type="text" id="one-in" placeholder="Start typing an address" autocomplete="off" enterkeyhint="done"
+            role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="one-sugg"></div>
+          <button class="btn btn-main" id="one-go" type="button">Add</button>
+        </div>
         <div class="status" id="bulk-status" role="status"></div>
+        <details class="paste" id="paste-box">
+          <summary>Paste a whole list instead</summary>
+          <label class="lbl" for="bulk-in">Addresses, one per line</label>
+          <textarea id="bulk-in" rows="6" placeholder="123 Main St, Chesapeake, VA&#10;456 Oak Ave, Norfolk, VA"></textarea>
+          <div class="row-btns"><button class="btn btn-soft" id="bulk-go" type="button">Put on map</button></div>
+        </details>
       </div>
       <div id="bulk-index" hidden>
         <div class="b-tools">
@@ -855,6 +876,65 @@ function bury(ids){                       // remove, leaving a small marker so o
   ids.forEach(id => { picked.delete(id); sentIds.delete(id); });
   saveCust(); renderBulk(false);
 }
+
+/* ---- add one customer at a time: pick from suggestions so the address is always right ---- */
+const oneIn = $("one-in"), oneList = document.createElement("ul");
+oneList.className = "sugg"; oneList.id = "one-sugg"; oneList.setAttribute("role", "listbox"); oneList.hidden = true;
+oneIn.parentElement.appendChild(oneList);
+let oneItems = [], onePick = -1, oneTimer = 0, oneSeq = 0, oneBusy = false;
+function drawOne(){
+  oneList.innerHTML = oneItems.map((p, i) => `<li role="option" id="one-${i}" data-i="${i}" aria-selected="${i === onePick}"><b>${esc(p.line1 || p.label)}</b><span>${esc(p.line2 || "")}</span></li>`).join("");
+  oneList.hidden = !oneItems.length; oneIn.setAttribute("aria-expanded", String(!!oneItems.length));
+  if (onePick >= 0) oneIn.setAttribute("aria-activedescendant", "one-" + onePick); else oneIn.removeAttribute("aria-activedescendant");
+}
+function closeOne(){ oneItems = []; onePick = -1; drawOne(); }
+function addOne(p, typed){
+  const label = p.label, dupe = live().find(c => [nameOf(c), c.text].some(t => t && t.toLowerCase() === label.toLowerCase()));
+  closeOne();
+  if (dupe){ bstatus(`${label} is already on the list.`, true); flashRow(dupe.id); return; }
+  const now = Date.now(), c = {id:now.toString(36) + "-0", born:now, mod:now, text:typed || label, label, lat:p.lat, lon:p.lon, street:p.street || ""};
+  cust.push(c); saveCust();
+  oneIn.value = ""; oneIn.focus();
+  bstatus(`Added ${label}.`, false);
+  renderBulk(false); flashRow(c.id);
+  if (bmap) bmap.flyTo({center:[c.lon, c.lat], zoom:Math.max(bmap.getZoom ? bmap.getZoom() : 12, 12)});
+}
+function flashRow(id){
+  const li = $("bulk-list").querySelector(`.b-row[data-id="${CSS.escape(id)}"]`); if (!li) return;
+  li.classList.remove("flash"); void li.offsetWidth; li.classList.add("flash");
+  const list = $("bulk-list"), top = li.offsetTop - list.offsetTop;
+  if (top < list.scrollTop || top > list.scrollTop + list.clientHeight - li.offsetHeight) list.scrollTop = top - 8;
+}
+async function addTyped(){                 // Add / Enter without picking a suggestion: look the text up once
+  const text = oneIn.value.trim();
+  if (!text){ bstatus("Type an address, then pick it from the list.", true); oneIn.focus(); return; }
+  if (onePick >= 0 && oneItems[onePick]){ addOne(oneItems[onePick], text); return; }
+  if (oneBusy) return; oneBusy = true; $("one-go").disabled = true;
+  try {
+    const {result} = await api("geocode?text=" + encodeURIComponent(text));
+    if (result && oneIn.value.trim() === text) addOne(result, text);
+    else if (!result) bstatus("⚠ Not found. Try adding the city, or pick from the suggestions.", true);
+  } catch(e){ if (!(e instanceof NeedPin)) bstatus(e.message, true); }
+  finally { oneBusy = false; $("one-go").disabled = false; }
+}
+oneIn.addEventListener("input", () => {
+  clearTimeout(oneTimer); const text = oneIn.value.trim(); bstatus("");
+  if (text.length < 3){ closeOne(); return; }
+  oneTimer = setTimeout(async () => {
+    const seq = ++oneSeq;
+    try { const {results} = await api("suggest?text=" + encodeURIComponent(text)); if (seq !== oneSeq || oneIn.value.trim() !== text) return; oneItems = results || []; onePick = -1; drawOne(); }
+    catch(e){ closeOne(); }
+  }, 220);
+});
+oneIn.addEventListener("keydown", e => {
+  if (e.key === "ArrowDown" && oneItems.length){ e.preventDefault(); onePick = Math.min(oneItems.length - 1, onePick + 1); drawOne(); }
+  else if (e.key === "ArrowUp" && oneItems.length){ e.preventDefault(); onePick = Math.max(0, onePick - 1); drawOne(); }
+  else if (e.key === "Escape"){ closeOne(); }
+  else if (e.key === "Enter"){ e.preventDefault(); addTyped(); }
+});
+oneIn.addEventListener("blur", () => setTimeout(closeOne, 150));
+oneList.addEventListener("pointerdown", e => { const li = e.target.closest("li[data-i]"); if (li){ e.preventDefault(); addOne(oneItems[+li.dataset.i], oneIn.value.trim()); } });
+$("one-go").addEventListener("click", addTyped);
 
 /* ---- filters ---- */
 const pressed = id => $(id).getAttribute("aria-pressed") === "true";
