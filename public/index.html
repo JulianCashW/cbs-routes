@@ -205,9 +205,16 @@ textarea{width:100%;min-height:150px;font:inherit;font-size:16px;line-height:1.4
 .b-ed-btns .btn{width:100%;min-height:44px}
 .b-editor .btn{padding:9px 16px;font-size:14px}
 .b-editor .btn-main{width:auto;min-height:0;padding:9px 22px}
-.b-meta{display:flex;flex-wrap:wrap;gap:2px 8px;font-size:12px;color:var(--muted);margin-top:3px}
-.b-due{font-weight:700;color:#7a3f0c;background:#f5dfc7;border-radius:6px;padding:0 6px}
-.b-next{font-weight:600;color:var(--olive-ink)}
+.b-sub{flex:1 1 100%;padding:0 0 2px 66px;margin-top:-2px}   /* lines up under the name */
+.b-meta{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
+.b-meta + .b-note{margin-top:5px}
+.b-meta > span{font-size:12px;line-height:1;padding:5px 9px;border-radius:999px;white-space:nowrap}
+.b-tag{font-weight:700;color:var(--ink);background:var(--sky);border:1px solid var(--accent-edge)}
+.b-tag-day{background:var(--field);border:1px solid var(--line)}
+.b-due{font-weight:700;color:#fff;background:#d08a1e;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.b-due.late{background:#b94a1c}
+.b-next{font-weight:700;color:var(--olive-ink);background:var(--field);border:1px solid var(--line)}
+.b-meta > .b-last{color:var(--muted);font-weight:600;padding-inline:2px}
 .b-note{font-size:12.5px;color:var(--muted);font-style:italic;margin-top:2px;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .b-list:has(.b-editor){max-height:none}   /* let the open editor show in full */
 .b-tools select{background-color:transparent;font-size:14px;font-weight:600;color:var(--muted);height:38px;min-height:0;padding:0 34px 0 14px;border-radius:999px;background-position:right 12px center}
@@ -840,16 +847,18 @@ function renderList(){
 }
 function row(c, n){
   const id = esc(c.id), due = dueOf(c), sent = sentIds.has(c.id), last = (c.hist || [])[0];
-  const meta = [c.freq ? FREQ_SHORT[c.freq] || `Every ${c.freq} days` : "", (c.days || []).length ? WEEK.filter(d => c.days.includes(d)).map(d => DAY_NAMES[d]).join(", ") : "",
-    last ? "Last " + fmtDay(last) : ""].filter(Boolean).map(t => `<span>${esc(t)}</span>`).join("");
-  const dueTag = due ? `<span class="${due.due ? "b-due" : "b-next"}">${esc(due.text)}</span>` : "";
+  const meta = (c.freq ? `<span class="b-tag">${esc(FREQ_SHORT[c.freq] || `Every ${c.freq} days`)}</span>` : "") +
+    ((c.days || []).length ? `<span class="b-tag b-tag-day">${esc(WEEK.filter(d => c.days.includes(d)).map(d => DAY_NAMES[d]).join(" · "))}</span>` : "") +
+    (last ? `<span class="b-last">Last ${esc(fmtDay(last))}</span>` : "");
+  const dueTag = due ? `<span class="${due.due ? "b-due" + (due.text === "Overdue" ? " late" : "") : "b-next"}">${esc(due.text)}</span>` : "";
   return `<li class="b-row${sent ? " sent" : ""}${c.star ? " star" : ""}" data-id="${id}"><label><input type="checkbox" data-id="${id}"><span class="b-num">${n}</span>` +
     `<span class="b-text">${c.name ? `<span class="b-name">${esc(c.name)}</span>` : ""}<span class="b-addr">${esc(nameOf(c))}</span>` +
-    `${meta || dueTag ? `<span class="b-meta">${dueTag}${meta}</span>` : ""}${c.notes ? `<span class="b-note">${esc(c.notes)}</span>` : ""}</span></label>` +
+    `</span></label>` +
     `${sent ? "<small>On route</small>" : ""}<div class="b-acts">` +
     `<button class="b-ic${c.star ? " on" : ""}" type="button" data-star="${id}" aria-pressed="${!!c.star}" aria-label="Premium" title="Premium">${IC.star}</button>` +
     `<button class="b-ic" type="button" data-edit="${id}" aria-label="Edit customer" title="Edit customer">${IC.edit}</button>` +
     `<button class="b-ic" type="button" data-show="${id}" aria-label="Show ${n} on the map" title="Show on map">${IC.show}</button></div>` +
+    (meta || dueTag || c.notes ? `<div class="b-sub">${meta || dueTag ? `<span class="b-meta">${dueTag}${meta}</span>` : ""}${c.notes ? `<span class="b-note">${esc(c.notes)}</span>` : ""}</div>` : "") +
     `${editing === c.id ? editor(c) : ""}</li>`;
 }
 function editor(c){
